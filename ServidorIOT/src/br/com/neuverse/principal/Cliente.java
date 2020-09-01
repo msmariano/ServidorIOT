@@ -83,6 +83,12 @@ public class Cliente implements Runnable {
 						}						
 						continue;						
 					}
+					if(conector.getStatus() == Status.CONFIG) {
+						
+						
+						
+						
+					}
 					if (conector.getStatus() == Status.LOGINWITHCOMMAND) {
 						if (conector.getSenha().equals("M@r0403") && conector.getUsuario().equals("Matinhos")) {
 							conector.setErro("Sucesso.");

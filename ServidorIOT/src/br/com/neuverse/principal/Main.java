@@ -33,6 +33,7 @@ public class Main {
 		System.out.println("Versao 1.0.0");
 		
 		
+	
 		new Thread() {
 			@Override
 			public void run() {
