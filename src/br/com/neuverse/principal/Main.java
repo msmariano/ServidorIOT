@@ -5,16 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Conector;
-import br.com.neuverse.entity.Iot;
-import br.com.neuverse.enumerador.Status;
-import br.com.neuverse.enumerador.TipoIOT;
 
 public class Main {
 	

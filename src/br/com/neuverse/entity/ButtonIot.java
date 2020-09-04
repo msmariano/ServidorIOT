@@ -6,6 +6,8 @@ public class ButtonIot {
 	private Status tecla;
 	private Integer buttonID;
 	private Status status;
+	private String jSon;
+	private Status funcao;
 
 	public Status getTecla() {
 		return tecla;
@@ -29,6 +31,22 @@ public class ButtonIot {
 
 	public void setStatus(Status status) {
 		this.status = status;
+	}
+
+	public String getjSon() {
+		return jSon;
+	}
+
+	public void setjSon(String jSon) {
+		this.jSon = jSon;
+	}
+
+	public Status getFuncao() {
+		return funcao;
+	}
+
+	public void setFuncao(Status funcao) {
+		this.funcao = funcao;
 	}
 
 }
