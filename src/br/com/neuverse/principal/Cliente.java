@@ -25,6 +25,15 @@ public class Cliente implements Runnable {
 	private List<Cliente> clientes;
 	private String id;
 	public BufferedReader entrada;
+	private String nomeIotCliente;
+
+	public String getNomeIotCliente() {
+		return nomeIotCliente;
+	}
+
+	public void setNomeIotCliente(String nomeIotCliente) {
+		this.nomeIotCliente = nomeIotCliente;
+	}
 
 	@Override
 	public void run() {
@@ -46,10 +55,25 @@ public class Cliente implements Runnable {
 							for (Conector con : listaConectores) {
 								if (con.getNome().equals(conector.getNome())) {
 									listaConectores.remove(con);
+									
+									for(Cliente c : clientes) {
+										if(c.getNomeIotCliente().equals(conector.getNome())) {
+											try {
+												
+												clientes.remove(c);												
+												c.socketCliente.close();							
+												
+											}catch (Exception e) {
+												// TODO: handle exception
+											}
+											break;
+										}
+									}
 								}
 								break;
 							}
 
+							setNomeIotCliente(conector.getNome());
 							conector.setErro("Sucesso.");
 							conector.setStatus(Status.CONECTADO);
 							UUID uniqueKey = UUID.randomUUID();
