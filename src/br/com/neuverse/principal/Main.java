@@ -22,7 +22,7 @@ public class Main {
 		Log.grava(String.valueOf(mainServidor.serverPort));
 		mainServidor.listaConectores = new ArrayList<>();
 		mainServidor.clientes = new ArrayList<>();
-		System.out.println("Versao 1.0.1 18/03/2021 20:00");
+		System.out.println("Versao 1.0.1 18/03/2021 22:12");
 		
 		
 	
@@ -33,8 +33,8 @@ public class Main {
 					try {
 						Socket socketCliente;
 						socketCliente = servidor.accept();
-						Log.grava("Cliente conectado: " + socketCliente.getInetAddress().getHostAddress() + " porta "
-								+ socketCliente.getPort());
+						//Log.grava("Cliente conectado: " + socketCliente.getInetAddress().getHostAddress() + " porta "
+						//		+ socketCliente.getPort());
 						new Thread() {
 							@Override
 							public void run() {

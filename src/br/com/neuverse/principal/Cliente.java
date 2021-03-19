@@ -45,7 +45,7 @@ public class Cliente implements Runnable {
 				String mens = entrada.readLine();
 				if (mens == null)
 					break;
-				Log.grava(mens);
+				//Log.grava(mens);
 				Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 				try {
 					Conector conector = gson.fromJson(mens, Conector.class);
@@ -59,7 +59,7 @@ public class Cliente implements Runnable {
 									for(Cliente c : clientes) {
 										if(c.getNomeIotCliente().equals(conector.getNome())) {
 											try {
-												
+												Log.grava("Removendo["+con.getNome()+"]  id: "+c.getId());
 												clientes.remove(c);												
 												c.socketCliente.close();							
 												
@@ -82,6 +82,7 @@ public class Cliente implements Runnable {
 							conector.setId(uniqueKey.toString());
 							id = uniqueKey.toString();
 							String jSon = gson.toJson(conector);
+							Log.grava("Inserindo["+conector.getNome()+"] id: "+conector.getId());
 							listaConectores.add(conector);
 							enviar(jSon + "\r\n");
 							continue;
@@ -99,7 +100,7 @@ public class Cliente implements Runnable {
 						String jSon = gson.toJson(conector);
 						for (Cliente cli : clientes) {
 							if (conector.getId().equals(cli.getId())) {
-								System.err.println(jSon);
+								System.err.println("RETORNO: "+ jSon);
 								cli.enviar(jSon + "\r\n");
 								cli.getSocketCliente().close();
 								break;
@@ -121,20 +122,30 @@ public class Cliente implements Runnable {
 							uniqueKey = UUID.randomUUID();
 							conector.setId(uniqueKey.toString());
 							id = uniqueKey.toString();
+							
+							boolean sair =false;
 							for (Conector con : listaConectores) {
 								if (con.getIot().getName().equals(conector.getIot().getName())) {
 									conector.setStatus(Status.CONTROLLERCOMMAND);
 									for (Cliente cli : clientes) {
 										if (con.getId().equals(cli.getId())) {
 											String jSonComando = gson.toJson(conector);
-											System.err.println(jSonComando);
+											System.err.println("LOGINWITHCOMMAND->CONTROLLERCOMMAND json: "+conector.getIot().getjSon());
 											cli.enviar(jSonComando + "\r\n");
 											break;
 										}
-									}
-									
+									}									
 									break;
 								}
+								else
+								{
+									System.err.println("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+									sair = true;									
+								}
+							}
+							if(sair) {
+								socketCliente.close();
+								break;
 							}
 						} else {
 							conector.setErro("Login falhou.Verifique seu usuario/senha.");
@@ -153,7 +164,7 @@ public class Cliente implements Runnable {
 								for (Cliente cli : clientes) {
 									if (con.getId().equals(cli.getId())) {
 										String jSon = gson.toJson(con);
-										System.err.println(jSon);
+										//System.err.println(jSon);
 										cli.enviar(jSon + "\r\n");
 										break;
 									}
@@ -166,6 +177,7 @@ public class Cliente implements Runnable {
 						conector.setStatus(Status.CONECTADO);
 						String jSon = gson.toJson(conector);
 						enviar(jSon + "\r\n");
+						Log.grava("Alive:"+conector.getNome());
 						continue;
 					} else {
 						socketCliente.close();
@@ -187,7 +199,7 @@ public class Cliente implements Runnable {
 		}
 		
 		
-		Log.grava("Cliente desconectado");
+		//Log.grava("Cliente desconectado");
 		for (Conector con : listaConectores) {
 			if (con.getId().equals(getId())) {
 				listaConectores.remove(con);
