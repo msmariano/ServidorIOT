@@ -22,7 +22,7 @@ public class Main {
 		Log.grava(String.valueOf(mainServidor.serverPort));
 		mainServidor.listaConectores = new ArrayList<>();
 		mainServidor.clientes = new ArrayList<>();
-		System.out.println("Versao 1.0.1 18/03/2021 22:12");
+		System.out.println("Versao 1.0.2 19/03/2021 03:34");
 		
 		
 	

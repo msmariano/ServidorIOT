@@ -123,7 +123,7 @@ public class Cliente implements Runnable {
 							conector.setId(uniqueKey.toString());
 							id = uniqueKey.toString();
 							
-							boolean sair =false;
+							boolean sair =true;
 							for (Conector con : listaConectores) {
 								if (con.getIot().getName().equals(conector.getIot().getName())) {
 									conector.setStatus(Status.CONTROLLERCOMMAND);
@@ -132,18 +132,15 @@ public class Cliente implements Runnable {
 											String jSonComando = gson.toJson(conector);
 											System.err.println("LOGINWITHCOMMAND->CONTROLLERCOMMAND json: "+conector.getIot().getjSon());
 											cli.enviar(jSonComando + "\r\n");
+											sair = false;	
 											break;
 										}
 									}									
 									break;
 								}
-								else
-								{
-									System.err.println("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
-									sair = true;									
-								}
 							}
 							if(sair) {
+								System.err.println("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								socketCliente.close();
 								break;
 							}
