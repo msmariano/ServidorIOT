@@ -6,7 +6,11 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import br.com.neuverse.entity.Conector;
+import br.com.neuverse.enumerador.Status;
 
 public class Main {
 	
@@ -22,10 +26,16 @@ public class Main {
 		Log.grava(String.valueOf(mainServidor.serverPort));
 		mainServidor.listaConectores = new ArrayList<>();
 		mainServidor.clientes = new ArrayList<>();
-		System.out.println("Versao 1.0.2 19/03/2021 03:34");
+		System.out.println("Versao 1.0.4 28/05/2021 00:01");
+		
+		Conector con = new Conector();
+		con.setStatus(Status.INFO_SERVIDOR);
+		Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+		String rt  = gson.toJson(con);
+		
+		System.out.println(rt);
 		
 		
-	
 		new Thread() {
 			@Override
 			public void run() {
@@ -55,3 +65,4 @@ public class Main {
 		}.start();
 	}
 }
+

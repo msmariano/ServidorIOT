@@ -65,6 +65,12 @@ public class Conector {
 	public void setNome(String nome) {
 		this.nome = nome;
 	}
+	public Mensagem getMens() {
+		return mens;
+	}
+	public void setMens(Mensagem mens) {
+		this.mens = mens;
+	}
 	private String usuario;
 	private String senha;
 	private String ip;
@@ -73,6 +79,7 @@ public class Conector {
 	private ControllerIot controlerIot;
 	private TipoIOT tipo;
 	private Status status;
+	private Mensagem mens;
 	private String erro;
 		
 }
