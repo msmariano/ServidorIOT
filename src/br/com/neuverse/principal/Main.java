@@ -26,14 +26,14 @@ public class Main {
 		Log.grava(String.valueOf(mainServidor.serverPort));
 		mainServidor.listaConectores = new ArrayList<>();
 		mainServidor.clientes = new ArrayList<>();
-		System.out.println("Versao 1.0.4 28/05/2021 00:01");
+		System.out.println("Versao 1.0.4 24/06/2021 06:35");
 		
-		Conector con = new Conector();
-		con.setStatus(Status.INFO_SERVIDOR);
-		Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-		String rt  = gson.toJson(con);
+		//Conector con = new Conector();
+		//con.setStatus(Status.INFO_SERVIDOR);
+		//Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+		//String rt  = gson.toJson(con);
 		
-		System.out.println(rt);
+		//System.out.println(rt);
 		
 		
 		new Thread() {
@@ -43,17 +43,22 @@ public class Main {
 					try {
 						Socket socketCliente;
 						socketCliente = servidor.accept();
-						//Log.grava("Cliente conectado: " + socketCliente.getInetAddress().getHostAddress() + " porta "
-						//		+ socketCliente.getPort());
+						Log.grava("Cliente conectado: " + socketCliente.getInetAddress().getHostAddress() + " porta "
+								+ socketCliente.getPort());
 						new Thread() {
 							@Override
 							public void run() {
+								Log.grava("Entrando Thread ip:"+socketCliente.getInetAddress().getHostAddress() + " porta "
+								+ socketCliente.getPort());
 								Cliente cliente = new Cliente();
+								cliente.setIpCliente(socketCliente.getInetAddress().getHostAddress() + " porta "
+								+ socketCliente.getPort());
 								mainServidor.clientes.add(cliente);
 								cliente.setSocketCliente(socketCliente);
 								cliente.setListaConectores(mainServidor.listaConectores);
 								cliente.setClientes(mainServidor.clientes);
 								cliente.run();
+								Log.grava("Saindo Thread ip:"+cliente.getIpCliente());
 							}
 						}.start();
 

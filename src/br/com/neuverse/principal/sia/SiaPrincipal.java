@@ -75,7 +75,7 @@ public class SiaPrincipal {
 				if(listaMetais.contains(par.getNomeParametro()))
 					par.setNomeLaboratorio("Metais");
 				else
-					par.setNomeLaboratorio("Não Metais");
+					par.setNomeLaboratorio("Nï¿½o Metais");
 				parametrosAux.add(par);
 				codigos = codigos + rs.getInt("codParametro")  + ",";
 				
@@ -118,7 +118,7 @@ public class SiaPrincipal {
 			}
 			System.out.println();
 			System.out.println();
-			System.out.println("DUPLICADOS[Não Metais]--------------------------");
+			System.out.println("DUPLICADOS[Nï¿½o Metais]--------------------------");
 			String dups = "select * from TB_FichaColetaParametro where CodParametro in (";
 			for (Parametro parametro : parametrosDuplicados) {
 				if(parametro.getNomeLaboratorio()!=null &&!parametro.getNomeLaboratorio().trim().equals("Metais")) {

@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 //import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +31,18 @@ public class Cliente implements Runnable {
 	private String id;
 	public BufferedReader entrada;
 	private String nomeIotCliente;
+	private String ipCliente;
 
 	public String getNomeIotCliente() {
 		return nomeIotCliente;
+	}
+
+	public String getIpCliente() {
+		return ipCliente;
+	}
+
+	public void setIpCliente(String ipCliente) {
+		this.ipCliente = ipCliente;
 	}
 
 	public void setNomeIotCliente(String nomeIotCliente) {
@@ -47,9 +57,11 @@ public class Cliente implements Runnable {
 
 			while (true) {
 				String mens = entrada.readLine();
-				if (mens == null)
+				if (mens == null){
+					Log.grava("Mensagem vazia");
 					break;
-				//Log.grava(mens);
+				}
+				Log.grava(mens);
 				Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 				try {
 					Conector conector = gson.fromJson(mens, Conector.class);
@@ -166,14 +178,14 @@ public class Cliente implements Runnable {
 								}
 							}
 							if(sair) {
-								System.err.println("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+								System.err.println("LOGINWITHCOMMAND nï¿½o encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								
 								Conector cr = new Conector();
 								cr.setId(id);
 								cr.setStatus(Status.RETORNOTRANSITORIO);
 								Mensagem mensRet = new Mensagem();
 								mensRet.setId(id);
-								mensRet.setMens("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+								mensRet.setMens("LOGINWITHCOMMAND nï¿½o encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								cr.setMens(mensRet);
 								mensRet.setSt(Status.ERRO);
 								String ret  = gson.toJson(cr);
@@ -209,9 +221,13 @@ public class Cliente implements Runnable {
 
 					} else if (conector.getStatus() == Status.ALIVE) {
 						conector.setStatus(Status.CONECTADO);
+						SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
+						Mensagem mensagem = new Mensagem();
+						mensagem.setMens(sdf.format(new Date()));
+						conector.setMens(mensagem);
 						String jSon = gson.toJson(conector);
 						enviar(jSon + "\r\n");
-						Log.grava("Alive:"+conector.getNome());
+						Log.grava("Alive:"+conector.getNome()+" "+conector.getMens().getMens());
 						continue;
 					} else {
 						socketCliente.close();
@@ -219,13 +235,14 @@ public class Cliente implements Runnable {
 					}
 
 				} catch (Exception e) {
-					Log.grava("mensagem inválida");
+					Log.grava("mensagem invÃ¡lida");
 					socketCliente.close();
 					break;
 				}
 			}
 		} catch (Exception e) {
 			try {
+				Log.grava("Exception_1:"+e.getMessage());
 				socketCliente.close();
 
 			} catch (IOException e1) {
@@ -233,29 +250,30 @@ public class Cliente implements Runnable {
 		}
 		
 		
-		//Log.grava("Cliente desconectado");
+		Log.grava("Cliente desconectando:"+this.getId());
 		for (Conector con : listaConectores) {
 			if (con.getId().equals(getId())) {
+				Log.grava("Removendo conector:"+con.getNome());
 				listaConectores.remove(con);
-			}
-			break;
+				break;
+			}			
 		}
 		clientes.remove(this);
 
 	}
 
-	public void enviar(String mens) {
+	public synchronized void enviar(String mens) {
 		BufferedWriter saida;
 		try {
 			saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
 			saida.write(mens);
 			saida.flush();
-			try {
+			/*try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
+			}*/
 			// saida.close();
 		} catch (IOException e) {
 			Log.grava(e.getMessage());
