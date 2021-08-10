@@ -17,24 +17,38 @@ import br.com.neuverse.entity.InfoServidor;
 
 public class Simulacao {
 	
-	public static void main(String[] args) throws IOException
+	public static void main(String[] args) throws IOException, InterruptedException
 	{
 		InetAddress serverEnd = InetAddress.getByName("rasp4msmariano.dynv6.net");
-        //InetAddress serverEnd = InetAddress.getByName("192.168.0.103");
-        Socket socket = new Socket(serverEnd,27015);
-        PrintWriter out = new PrintWriter(
-                new BufferedWriter(new OutputStreamWriter(
-                        socket.getOutputStream())), true);
-        out.println("{\"status\":\"INFO_SERVIDOR\"}");
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
-
-
-        String ret = in.readLine();
-        Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-        InfoServidor infoServidor = gson.fromJson(ret, InfoServidor.class);
+        //InetAddress serverEnd = InetAddress.getByName("192.168.0.254");
+		String comando = "";
+		if (args.length >0) {
+			System.out.println(args[0]);
+			comando = args[0];
+		}
+		
+        if(comando.equals("teste"))
+	        while(true) {
+	        	Socket socket = new Socket(serverEnd,27015);
+	            PrintWriter out = new PrintWriter(
+	                 new BufferedWriter(new OutputStreamWriter(
+	                             socket.getOutputStream())), true);
+	        	out.println("{\"status\":\"INFO_SERVIDOR\"}");
+		        BufferedReader in = new BufferedReader(
+		                new InputStreamReader(socket.getInputStream()));
+		
+		
+		        String ret = in.readLine();
+		        Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+		        InfoServidor infoServidor = gson.fromJson(ret, InfoServidor.class);
+		        System.out.println(infoServidor.getDataAtual());
+	       
+	        	Thread.sleep(5000);
+	        	socket.close();
+	        	
+	        }
         
-        socket.close();
+        
 	}
 
 }

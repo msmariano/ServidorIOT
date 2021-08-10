@@ -70,6 +70,7 @@ public class Cliente implements Runnable {
 						infoServidor.setNomeServidor("Servidor MsMariano");
 						infoServidor.setDataAtual(new Date());
 						String nomecomputador=InetAddress.getLocalHost().getHostName();
+						infoServidor.setIp(InetAddress.getLocalHost().getHostAddress());
 						infoServidor.setNomeComputador(nomecomputador);
 						String jSon = gson.toJson(infoServidor);
 						enviar(jSon + "\r\n");
@@ -178,14 +179,14 @@ public class Cliente implements Runnable {
 								}
 							}
 							if(sair) {
-								System.err.println("LOGINWITHCOMMAND nï¿½o encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+								System.err.println("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								
 								Conector cr = new Conector();
 								cr.setId(id);
 								cr.setStatus(Status.RETORNOTRANSITORIO);
 								Mensagem mensRet = new Mensagem();
 								mensRet.setId(id);
-								mensRet.setMens("LOGINWITHCOMMAND nï¿½o encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+								mensRet.setMens("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								cr.setMens(mensRet);
 								mensRet.setSt(Status.ERRO);
 								String ret  = gson.toJson(cr);
