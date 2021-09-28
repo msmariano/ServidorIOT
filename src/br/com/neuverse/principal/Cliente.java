@@ -9,12 +9,15 @@ import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 //import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import br.com.neuverse.database.Usuario;
 //import java.lang.reflect.Type;
 //import com.google.gson.reflect.TypeToken;
 //import br.com.neuverse.entity.ButtonIot;
@@ -22,6 +25,7 @@ import br.com.neuverse.entity.Conector;
 import br.com.neuverse.entity.InfoServidor;
 import br.com.neuverse.entity.Mensagem;
 import br.com.neuverse.enumerador.Status;
+import br.com.neuverse.enumerador.TipoIOT;
 
 public class Cliente implements Runnable {
 
@@ -75,9 +79,52 @@ public class Cliente implements Runnable {
 						String jSon = gson.toJson(infoServidor);
 						enviar(jSon + "\r\n");
 					}
-					
+					if(conector.getStatus() == Status.LISTA_IOT) {
+						List<String> iots = new ArrayList<String>();
+						for (Conector con : listaConectores) {
+							iots.add(con.getIot().getName());
+						}
+						String jSon = gson.toJson(iots);
+						enviar(jSon + "\r\n");
+						continue;
+						
+					}					
 					if (conector.getStatus() == Status.LOGIN) {
-						if (conector.getSenha().equals("M@r0403") && conector.getUsuario().equals("Matinhos")) {
+						
+						
+						if(conector.getTipo()!=null && conector.getTipo().equals(TipoIOT.HUMAN)) {
+							
+							Usuario usuario = new Usuario();
+							usuario.setSenha(conector.getSenha());
+							usuario.setUsuario(conector.getUsuario());
+							usuario.obterPorUsuarioSenha();
+							if(usuario.getId()!=null) {
+								conector.setStatus(Status.LOGIN_OK);
+								List<String> iots = new ArrayList<String>();
+								for (Conector con : listaConectores) {
+									iots.add(con.getIot().getName());
+								}
+								conector.setIots(iots);
+								UUID uniqueKey = UUID.randomUUID();
+								conector.setId(uniqueKey.toString());
+								uniqueKey = UUID.randomUUID();
+								conector.setId(uniqueKey.toString());
+								id = uniqueKey.toString();
+								Log.grava("Inserindo["+conector.getNome()+"] id: "+conector.getId());
+							}
+							else {
+								conector.setStatus(Status.LOGIN_FAIL);
+							}
+							
+							
+							String jSon = gson.toJson(conector);
+							enviar(jSon + "\r\n");
+							break;
+							
+							
+							
+						}
+						else if (conector.getSenha().equals("M@r0403") && conector.getUsuario().equals("Matinhos")) {
 
 							for (Conector con : listaConectores) {
 								if (con.getNome().equals(conector.getNome())) {
@@ -219,7 +266,9 @@ public class Cliente implements Runnable {
 								break;
 							}
 						}
-
+						String jSon = gson.toJson(conector);
+						enviar(jSon + "\r\n");
+				
 					} else if (conector.getStatus() == Status.ALIVE) {
 						conector.setStatus(Status.CONECTADO);
 						SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy hh:mm:ss");

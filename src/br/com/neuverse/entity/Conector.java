@@ -1,5 +1,7 @@
 package br.com.neuverse.entity;
 
+import java.util.List;
+
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 
@@ -71,6 +73,12 @@ public class Conector {
 	public void setMens(Mensagem mens) {
 		this.mens = mens;
 	}
+	public List<String> getIots() {
+		return iots;
+	}
+	public void setIots(List<String> iots) {
+		this.iots = iots;
+	}
 	private String usuario;
 	private String senha;
 	private String ip;
@@ -81,5 +89,6 @@ public class Conector {
 	private Status status;
 	private Mensagem mens;
 	private String erro;
+	private List<String> iots;
 		
 }
