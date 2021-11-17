@@ -21,7 +21,7 @@ public class Simulacao {
 	public static void main(String[] args) throws IOException, InterruptedException
 	{
 		//InetAddress serverEnd = InetAddress.getByName("rasp4msmariano.dynv6.net");
-        InetAddress serverEnd = InetAddress.getByName("localhost");
+        InetAddress serverEnd = InetAddress.getByName("192.168.0.254");
 		String comando = "";
 		if (args.length >0) {
 			System.out.println(args[0]);
@@ -31,7 +31,7 @@ public class Simulacao {
         if(comando.equals("teste")) {
 	        while(true) {
 	        	
-	        	Socket socket = new Socket(serverEnd,27015);
+	        	Socket socket = new Socket(serverEnd,27020);
 	            PrintWriter out = new PrintWriter(
 	                 new BufferedWriter(new OutputStreamWriter(
 	                             socket.getOutputStream())), true);

@@ -31,13 +31,11 @@
 
 
 		<dependency>
-			<groupId>pi4j</groupId>
+			<groupId>com.pi4j</groupId>
 			<artifactId>pi4j-core</artifactId>
-			<version>1.0</version>
-			<scope>system</scope>
-			<type>jar</type>
-			<systemPath>/opt/pi4j/lib/pi4j-core.jar</systemPath>
+		   <version>1.2</version>
 		</dependency>
+		
 
 
 		<!-- https://mvnrepository.com/artifact/com.sun.net.httpserver/http -->

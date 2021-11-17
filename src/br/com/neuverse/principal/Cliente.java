@@ -1,5 +1,6 @@
 package br.com.neuverse.principal;
 
+import java.awt.Button;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 //import java.io.FileWriter;
@@ -14,10 +15,16 @@ import java.util.Date;
 //import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.lang.reflect.Type;
+import com.google.gson.reflect.TypeToken;
 
 import br.com.neuverse.database.Usuario;
+import br.com.neuverse.entity.ButtonGpioRaspPi;
+import br.com.neuverse.entity.ButtonIot;
 //import java.lang.reflect.Type;
 //import com.google.gson.reflect.TypeToken;
 //import br.com.neuverse.entity.ButtonIot;
@@ -31,6 +38,7 @@ public class Cliente implements Runnable {
 
 	private Socket socketCliente;
 	private List<Conector> listaConectores;
+	private List<ButtonGpioRaspPi>	listaGpioButtons;
 	private List<Cliente> clientes;
 	private String id;
 	public BufferedReader entrada;
@@ -39,6 +47,14 @@ public class Cliente implements Runnable {
 
 	public String getNomeIotCliente() {
 		return nomeIotCliente;
+	}
+
+	public List<ButtonGpioRaspPi> getListaGpioButtons() {
+		return listaGpioButtons;
+	}
+
+	public void setListaGpioButtons(List<ButtonGpioRaspPi> listaGpioButtons) {
+		this.listaGpioButtons = listaGpioButtons;
 	}
 
 	public String getIpCliente() {
@@ -69,6 +85,7 @@ public class Cliente implements Runnable {
 				Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 				try {
 					Conector conector = gson.fromJson(mens, Conector.class);
+					Log.grava("Status:"+conector.getStatus().toString());
 					if (conector.getStatus() == Status.INFO_SERVIDOR) {
 						InfoServidor infoServidor = new InfoServidor();
 						infoServidor.setNomeServidor("Servidor MsMariano");
@@ -199,7 +216,32 @@ public class Cliente implements Runnable {
 							
 							boolean sair =true;
 							for (Conector con : listaConectores) {
-								if (con.getIot().getName().equals(conector.getIot().getName())) {
+
+								if(con.getTipo().equals(TipoIOT.SERVIDOR)){
+									Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
+									List<ButtonIot> listaBiot = gson.fromJson(conector.getIot().getjSon(),listType);
+									for (ButtonIot buttonIot : listaBiot) {
+										if(buttonIot.getStatus().equals(Status.OUT)){
+											for (ButtonGpioRaspPi bgrpi : listaGpioButtons) {
+												if(bgrpi.getId().equals(buttonIot.getButtonID())){
+													if(buttonIot.getTecla().equals(Status.ON))
+														bgrpi.ligar();
+													else
+														bgrpi.desligar();
+													break;
+												}									
+											}
+										}
+									}
+									
+									con.setStatus(Status.RETORNO);
+									String jSon = gson.toJson(con);
+									enviar(jSon + "\r\n");
+									getSocketCliente().close();
+									break;
+
+								}
+								else if (con.getIot().getName().equals(conector.getIot().getName())) {
 									conector.setStatus(Status.CONTROLLERCOMMAND);
 									for (Cliente cli : clientes) {
 										if (con.getId().equals(cli.getId())) {
@@ -226,14 +268,14 @@ public class Cliente implements Runnable {
 								}
 							}
 							if(sair) {
-								System.err.println("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+								System.err.println("LOGINWITHCOMMAND nï¿½o encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								
 								Conector cr = new Conector();
 								cr.setId(id);
 								cr.setStatus(Status.RETORNOTRANSITORIO);
 								Mensagem mensRet = new Mensagem();
 								mensRet.setId(id);
-								mensRet.setMens("LOGINWITHCOMMAND não encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+								mensRet.setMens("LOGINWITHCOMMAND nï¿½o encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								cr.setMens(mensRet);
 								mensRet.setSt(Status.ERRO);
 								String ret  = gson.toJson(cr);
@@ -285,7 +327,7 @@ public class Cliente implements Runnable {
 					}
 
 				} catch (Exception e) {
-					Log.grava("mensagem invÃ¡lida");
+					Log.grava("mensagem invÃ¡lida:"+e.getMessage());
 					socketCliente.close();
 					break;
 				}

@@ -10,9 +10,10 @@ public class Conexao {
 
 	Conexao() {
 		try {
-			connection = DriverManager.getConnection("jdbc:sqlite:C:\\Users\\msmar\\Desktop\\cfgServidor.db");
+			connection = DriverManager.getConnection("jdbc:sqlite:cfgServidor.db");
 
 		} catch (SQLException e) {
+			System.out.println(e.getMessage());
 		}
 	}
 

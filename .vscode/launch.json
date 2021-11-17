@@ -1,0 +1,48 @@
+{
+    // Use o IntelliSense para saber mais sobre os atributos possíveis.
+    // Focalizar para exibir as descrições dos atributos existentes.
+    // Para obter mais informações, acesse: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+
+
+        {
+            "type": "java",
+            "name": "Launch Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Launch Main",
+            "request": "attach",
+            "mainClass": "br.com.neuverse.principal.Main",
+            "projectName": "ServidorIOT",
+            "hostName": "192.168.0.254",
+            "port": 8000
+        },
+        {
+            "type": "java",
+            "name": "Launch Simulacao",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.Simulacao",
+            "args": "teste",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
+            "name": "Launch TestePi4J",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.TestePi4J",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
+            "name": "Launch SiaPrincipal",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.sia.SiaPrincipal",
+            "projectName": "ServidorIOT"
+        }
+    ]
+}

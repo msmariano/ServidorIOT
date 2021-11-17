@@ -19,8 +19,12 @@ public class TestePi4J {
         final GpioController gpio = GpioFactory.getInstance();
 
         // provision gpio pin #01 & #03 as an output pins and blink
-        final GpioPinDigitalOutput led1 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01);
+        final GpioPinDigitalOutput led1 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00);
         final GpioPinDigitalOutput led2 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03);
+
+        led1.low();
+        led1.high();
+        led1.getState();
 
         // provision gpio pin #02 as an input pin with its internal pull down resistor enabled
         final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
@@ -40,7 +44,7 @@ public class TestePi4J {
             });
 
         // continuously blink the led every 1/2 second for 15 seconds
-        led1.blink(500, 15000);
+        led1.blink(1000);
 
         // continuously blink the led every 1 second
         led2.blink(1000);
