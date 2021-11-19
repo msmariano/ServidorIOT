@@ -4,6 +4,7 @@
     // Para obter mais informações, acesse: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
 
 
 
@@ -15,7 +16,7 @@
         },
         {
             "type": "java",
-            "name": "Launch Main",
+            "name": "Remote Main",
             "request": "attach",
             "mainClass": "br.com.neuverse.principal.Main",
             "projectName": "ServidorIOT",
@@ -24,10 +25,17 @@
         },
         {
             "type": "java",
+            "name": "Launch Main",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.Main",
+            "projectName": "ServidorIOT"            
+        },
+        {
+            "type": "java",
             "name": "Launch Simulacao",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.Simulacao",
-            "args": "teste",
+            "args": "listarIots",
             "projectName": "ServidorIOT"
         },
         {

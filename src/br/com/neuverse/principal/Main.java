@@ -34,7 +34,7 @@ public class Main {
 	private List<Conector> listaConectores;
 	private List<ButtonGpioRaspPi>	listaGpioButtons;
 	private List<Cliente> clientes;
-	final Integer serverPort = 27020;
+	final Integer serverPort = 27015;
 
 	public static void main(String[] args) throws IOException, SQLException {
 
@@ -94,12 +94,13 @@ public class Main {
 				conector.setStatus(Status.LOGINWITHCOMMAND);
 				conector.setSenha("M@r0403");
 				conector.setUsuario("Matinhos");
-				conector.setTipo(TipoIOT.SERVIDOR);
+				conector.setTipo(TipoIOT.HUMAN);
 				Iot iot = new Iot();
 				conector.setIot(iot);
 				conector.setId("0");
 				iot.setId("0");
-				iot.setName("Casa_prado_velho");
+				iot.setTipoIOT(TipoIOT.SERVIDOR);
+				iot.setName("ServidorMatinhosRaspPiZero");
 				ButtonIot button = new ButtonIot();
 				// if(args[1].toLowerCase().equals("garagem"))
 				// button.setButtonID(1);
@@ -136,12 +137,29 @@ public class Main {
 			conector.setId("");
 			conector.setNome("ServidorMatinhos");
 			conector.setTipo(TipoIOT.SERVIDOR);
+			Iot iot = new Iot();
+			iot.setTipoIOT(TipoIOT.SERVIDOR);
+			iot.setName("ServidorMatinhosRaspPiZero");
+			conector.setIot(iot);
 			mainServidor.listaConectores.add(conector);
 			mainServidor.clientes = new ArrayList<>();
 			mainServidor.listaGpioButtons  = new ArrayList<>();
-			ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(0,1);
-			bgrpi.setId(0);
-			mainServidor.listaGpioButtons.add(bgrpi);
+			Integer keys[][] = {{0,1},{8,9},{15,16},{4,5}};
+
+			List<ButtonIot> buttons = new ArrayList<>();
+			for(int i=0;i < 4;i++){
+				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(keys[i][0],keys[i][1]);
+				bgrpi.setId(i);
+				mainServidor.listaGpioButtons.add(bgrpi);
+				ButtonIot bIot = new ButtonIot();
+				bIot.setButtonID(i);
+				bIot.setFuncao(Status.OUT);
+				buttons.add(bIot);
+			}
+			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+			String jSon = gson.toJson(buttons);
+			conector.getIot().setjSon(jSon);
+			
 			System.out.println("Versao 1.0.5 03/09/2021 19:37");
 			try {
 				Usuario usuario = new Usuario();

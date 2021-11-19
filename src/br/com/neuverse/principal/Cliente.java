@@ -217,7 +217,13 @@ public class Cliente implements Runnable {
 							boolean sair =true;
 							for (Conector con : listaConectores) {
 
-								if(con.getTipo().equals(TipoIOT.SERVIDOR)){
+								if(con.getIot().getTipoIOT().equals(conector.getIot().getTipoIOT())
+									&&  con.getIot().getName().equals(conector.getIot().getName())){
+
+
+
+
+
 									Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
 									List<ButtonIot> listaBiot = gson.fromJson(conector.getIot().getjSon(),listType);
 									for (ButtonIot buttonIot : listaBiot) {
@@ -238,6 +244,7 @@ public class Cliente implements Runnable {
 									String jSon = gson.toJson(con);
 									enviar(jSon + "\r\n");
 									getSocketCliente().close();
+									sair = false;
 									break;
 
 								}

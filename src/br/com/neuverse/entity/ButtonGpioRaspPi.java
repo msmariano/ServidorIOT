@@ -18,7 +18,7 @@ public class ButtonGpioRaspPi {
     public ButtonGpioRaspPi(Integer gpioInterruptor,Integer gpioComando){
         gpio = GpioFactory.getInstance();
         interruptor = gpio.provisionDigitalOutputPin(RaspiPin.getPinByAddress(gpioInterruptor));
-        comando = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(gpioComando), PinPullResistance.PULL_DOWN);
+        comando = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(gpioComando), PinPullResistance.PULL_UP);
         comando.addListener(new GpioPinListenerDigital() {
             @Override
             public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {

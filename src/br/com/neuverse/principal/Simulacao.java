@@ -51,7 +51,7 @@ public class Simulacao {
 	        }
         }
         else if (comando.equals("listarIots")) {
-        	Socket socket = new Socket("rasp4msmariano.dynv6.net",27016);
+        	Socket socket = new Socket("192.168.0.254",27020);
             PrintWriter out = new PrintWriter(
                  new BufferedWriter(new OutputStreamWriter(
                              socket.getOutputStream())), true);
