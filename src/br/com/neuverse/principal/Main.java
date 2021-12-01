@@ -160,7 +160,7 @@ public class Main {
 			String jSon = gson.toJson(buttons);
 			conector.getIot().setjSon(jSon);
 			
-			System.out.println("Versao 1.0.5 03/09/2021 19:37");
+			System.out.println("Versao 1.0.6 01/12/2021 00:56");
 			try {
 				Usuario usuario = new Usuario();
 				usuario.setUsuario("marcelo@neuverse.com.br");

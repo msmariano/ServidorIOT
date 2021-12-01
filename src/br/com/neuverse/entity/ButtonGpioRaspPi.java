@@ -9,6 +9,8 @@ import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
+import br.com.neuverse.enumerador.Status;
+
 public class ButtonGpioRaspPi {
     private Integer id;
     private final GpioController gpio;
@@ -29,7 +31,20 @@ public class ButtonGpioRaspPi {
                 
             }
         });
+        interruptor.addListener(new GpioPinListenerDigital() {
+            @Override
+            public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
+                               
+            }
+        });
 
+    }
+
+    public Status getStatus(){
+        if (interruptor.isHigh())
+            return Status.ON;
+        else
+           return Status.OFF;        
     }
 
     public Integer getId() {

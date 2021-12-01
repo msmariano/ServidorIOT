@@ -216,14 +216,10 @@ public class Cliente implements Runnable {
 							
 							boolean sair =true;
 							for (Conector con : listaConectores) {
-
+								//boolean bContinuarConectado = false;
 								if(con.getIot().getTipoIOT().equals(conector.getIot().getTipoIOT())
-									&&  con.getIot().getName().equals(conector.getIot().getName())){
-
-
-
-
-
+									&&  con.getIot().getName().equals(conector.getIot().getName())
+									&& con.getIot().getTipoIOT().equals(TipoIOT.SERVIDOR)){
 									Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
 									List<ButtonIot> listaBiot = gson.fromJson(conector.getIot().getjSon(),listType);
 									for (ButtonIot buttonIot : listaBiot) {
@@ -238,12 +234,24 @@ public class Cliente implements Runnable {
 												}									
 											}
 										}
+										else if(buttonIot.getStatus().equals(Status.READ)){
+											for (ButtonGpioRaspPi bgrpi : listaGpioButtons) {
+												if(bgrpi.getId().equals(buttonIot.getButtonID())){
+													buttonIot.setStatus(bgrpi.getStatus());
+													break;
+												}									
+											}
+											//bContinuarConectado = true;
+										}
 									}
 									
-									con.setStatus(Status.RETORNO);
-									String jSon = gson.toJson(con);
+									conector.setStatus(Status.RETORNO);
+									String jSonListaBtn = gson.toJson(listaBiot,listType);
+									conector.getIot().setjSon(jSonListaBtn);
+									String jSon = gson.toJson(conector);
 									enviar(jSon + "\r\n");
-									getSocketCliente().close();
+									//if(!bContinuarConectado)
+									//	getSocketCliente().close();
 									sair = false;
 									break;
 
@@ -275,14 +283,14 @@ public class Cliente implements Runnable {
 								}
 							}
 							if(sair) {
-								System.err.println("LOGINWITHCOMMAND n�o encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+								System.err.println("LOGINWITHCOMMAND nao encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								
 								Conector cr = new Conector();
 								cr.setId(id);
 								cr.setStatus(Status.RETORNOTRANSITORIO);
 								Mensagem mensRet = new Mensagem();
 								mensRet.setId(id);
-								mensRet.setMens("LOGINWITHCOMMAND n�o encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
+								mensRet.setMens("LOGINWITHCOMMAND nao encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
 								cr.setMens(mensRet);
 								mensRet.setSt(Status.ERRO);
 								String ret  = gson.toJson(cr);
@@ -351,7 +359,7 @@ public class Cliente implements Runnable {
 		
 		Log.grava("Cliente desconectando:"+this.getId());
 		for (Conector con : listaConectores) {
-			if (con.getId().equals(getId())) {
+			if (con.getId().equals(getId()) && !con.getTipo().equals(TipoIOT.SERVIDOR)) {
 				Log.grava("Removendo conector:"+con.getNome());
 				listaConectores.remove(con);
 				break;
