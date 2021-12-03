@@ -238,6 +238,7 @@ public class Cliente implements Runnable {
 											for (ButtonGpioRaspPi bgrpi : listaGpioButtons) {
 												if(bgrpi.getId().equals(buttonIot.getButtonID())){
 													buttonIot.setStatus(bgrpi.getStatus());
+													buttonIot.setFuncao(Status.INTERRUPTOR);
 													break;
 												}									
 											}
