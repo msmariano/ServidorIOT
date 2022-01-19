@@ -246,6 +246,7 @@ public class Cliente implements Runnable {
 										}
 									}
 									
+									
 									conector.setStatus(Status.RETORNO);
 									String jSonListaBtn = gson.toJson(listaBiot,listType);
 									conector.getIot().setjSon(jSonListaBtn);
@@ -257,6 +258,7 @@ public class Cliente implements Runnable {
 									break;
 
 								}
+								
 								else if (con.getIot().getName().equals(conector.getIot().getName())) {
 									conector.setStatus(Status.CONTROLLERCOMMAND);
 									for (Cliente cli : clientes) {
