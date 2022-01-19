@@ -1,7 +1,8 @@
 package br.com.neuverse.enumerador;
 
 public enum TipoIOT {
-	CONTROLELAMPADA(1,"Controle lampadas"),CONTROLEREMOTO(2,"Controle remoto"),IOT(3,"Iot"),HUMAN(4,"Humano"),SERVIDOR(5,"Servidor");
+	CONTROLELAMPADA(1,"Controle lampadas"),CONTROLEREMOTO(2,"Controle remoto"),IOT(3,"Iot"),HUMAN(4,"Humano"),
+		SERVIDOR(5,"Servidor"),SERVIDORIOT(6,"ServidorIOT");
 
 	private final int valor;
 	private final String descricao;

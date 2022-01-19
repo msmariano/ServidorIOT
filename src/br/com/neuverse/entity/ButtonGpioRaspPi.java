@@ -13,21 +13,37 @@ import br.com.neuverse.enumerador.Status;
 
 public class ButtonGpioRaspPi {
     private Integer id;
+    private Integer tipo;
     private final GpioController gpio;
     private final GpioPinDigitalOutput interruptor;
     private final GpioPinDigitalInput comando;
 
-    public ButtonGpioRaspPi(Integer gpioInterruptor,Integer gpioComando){
+    public ButtonGpioRaspPi(Integer gpioInterruptor,Integer gpioComando,Integer p){
         gpio = GpioFactory.getInstance();
+        tipo = p;
         interruptor = gpio.provisionDigitalOutputPin(RaspiPin.getPinByAddress(gpioInterruptor));
-        comando = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(gpioComando), PinPullResistance.PULL_UP);
+        if(p.equals(1))
+            comando = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(gpioComando), PinPullResistance.PULL_UP);
+        else if(p.equals(0)){
+            comando = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(gpioComando), PinPullResistance.PULL_DOWN);
+        }
+        else
+            comando = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(gpioComando), PinPullResistance.OFF);
         comando.addListener(new GpioPinListenerDigital() {
             @Override
             public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
-                if (interruptor.isHigh())
-                    desligar();
-                else
-                    ligar();
+                if(tipo.equals(1)){
+                    if (interruptor.isHigh())
+                        desligar();
+                    else
+                        ligar();
+                }
+                else{
+                    if (interruptor.isHigh())
+                        ligar();
+                    else
+                        desligar();
+                }
                 
             }
         });
@@ -41,10 +57,19 @@ public class ButtonGpioRaspPi {
     }
 
     public Status getStatus(){
-        if (interruptor.isHigh())
-            return Status.ON;
-        else
-           return Status.OFF;        
+        if(tipo.equals(1)){
+            if (interruptor.isHigh())
+                return Status.ON;
+            else
+                return Status.OFF; 
+        }  
+        else {
+            if (interruptor.isHigh())
+                return Status.OFF;
+            else
+                return Status.ON; 
+
+        }     
     }
 
     public Integer getId() {

@@ -1,5 +1,7 @@
 package br.com.neuverse.entity;
 
+import java.util.List;
+
 import br.com.neuverse.enumerador.TipoIOT;
 
 public class Iot {
@@ -7,9 +9,16 @@ public class Iot {
 	private String name;
 	private String jSon;
 	private TipoIOT tipoIOT;
+	private List<IotServidor> servidores;
 	
 	public String getId() {
 		return id;
+	}
+	public List<IotServidor> getServidor() {
+		return servidores;
+	}
+	public void setServidor(List<IotServidor> servidores) {
+		this.servidores = servidores;
 	}
 	public TipoIOT getTipoIOT() {
 		return tipoIOT;

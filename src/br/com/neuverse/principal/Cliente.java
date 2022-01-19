@@ -25,6 +25,7 @@ import com.google.gson.reflect.TypeToken;
 import br.com.neuverse.database.Usuario;
 import br.com.neuverse.entity.ButtonGpioRaspPi;
 import br.com.neuverse.entity.ButtonIot;
+import br.com.neuverse.entity.ComandoIOT;
 //import java.lang.reflect.Type;
 //import com.google.gson.reflect.TypeToken;
 //import br.com.neuverse.entity.ButtonIot;
@@ -223,7 +224,34 @@ public class Cliente implements Runnable {
 									Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
 									List<ButtonIot> listaBiot = gson.fromJson(conector.getIot().getjSon(),listType);
 									for (ButtonIot buttonIot : listaBiot) {
-										if(buttonIot.getStatus().equals(Status.OUT)){
+										//teste iotservidor
+										if(buttonIot.getButtonID().equals(4)){
+											if(buttonIot.getStatus().equals(Status.OUT)){
+												if(buttonIot.getTecla().equals(Status.ON))
+													Main.motorPiscina("ligar");
+												else
+													Main.motorPiscina("desligar");
+											}
+											else if(buttonIot.getStatus().equals(Status.READ)){
+												buttonIot.setFuncao(Status.INTERRUPTOR);
+												ComandoIOT ciot = Main.motorPiscina("estadoAtual");
+												if(ciot!=null){
+													switch(Integer.parseInt(ciot.getResultado())){
+														case 0:
+															buttonIot.setStatus(Status.OFF);
+															break;
+														case 1:
+															buttonIot.setStatus(Status.ON);
+															break;
+														default:
+															buttonIot.setStatus(Status.OFF);
+															break;
+													}
+												}
+											}
+											break;
+										}
+										else if(buttonIot.getStatus().equals(Status.OUT)){
 											for (ButtonGpioRaspPi bgrpi : listaGpioButtons) {
 												if(bgrpi.getId().equals(buttonIot.getButtonID())){
 													if(buttonIot.getTecla().equals(Status.ON))
