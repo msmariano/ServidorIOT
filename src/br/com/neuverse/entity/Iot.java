@@ -9,10 +9,17 @@ public class Iot {
 	private String name;
 	private String jSon;
 	private TipoIOT tipoIOT;
+	private String ip;
 	private List<IotServidor> servidores;
 	
 	public String getId() {
 		return id;
+	}
+	public String getIp() {
+		return ip;
+	}
+	public void setIp(String ip) {
+		this.ip = ip;
 	}
 	public List<IotServidor> getServidor() {
 		return servidores;

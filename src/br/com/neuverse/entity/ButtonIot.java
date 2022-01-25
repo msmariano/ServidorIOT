@@ -8,9 +8,18 @@ public class ButtonIot {
 	private Status status;
 	private String jSon;
 	private Status funcao;
+	private String ip;
 
 	public Status getTecla() {
 		return tecla;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
 	}
 
 	public void setTecla(Status tecla) {

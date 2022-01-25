@@ -14,24 +14,24 @@ import com.google.gson.GsonBuilder;
 
 public class ControleRest {
 
+    private String ip;
 
-    public ComandoIOT motorPiscina(String acao) throws Exception {
+    public ComandoIOT sendRest(String jSon) throws Exception {
        
-        URL url = new URL("http://192.168.0.241");
+        URL url = new URL("http://"+ip);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(HttpMethod.POST);
         con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestProperty("Host", "192.168.0.241");
+        con.setRequestProperty("Host", ip);
         con.setRequestProperty("Connection", "Keep-Alive");
-        String l = "{\"acao\":\""+acao+"\"}";
-        con.setRequestProperty("Content-Length", String.valueOf(l.length()));
+        con.setRequestProperty("Content-Length", String.valueOf(jSon.length()));
         con.setRequestProperty("Accept", "*/*");
         con.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
         con.setDoOutput(true);
         
         try(OutputStream os = con.getOutputStream()) {
-            byte[] input = l.getBytes();
-            os.write(input, 0, l.length());			
+            byte[] input = jSon.getBytes();
+            os.write(input, 0, jSon.length());			
         }
         int responseCode = con.getResponseCode();
 
@@ -56,6 +56,14 @@ public class ControleRest {
 			return ciot;
         }
 		return null;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
     }
     
 }
