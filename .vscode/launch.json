@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch ControleMotorPiscina",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.ControleMotorPiscina",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
+            "name": "Launch TemporizadorMotor",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.TemporizadorMotor",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "Launch Teste",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.Teste",

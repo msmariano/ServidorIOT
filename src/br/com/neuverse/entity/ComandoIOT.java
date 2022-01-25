@@ -5,9 +5,27 @@ public class ComandoIOT {
     private String retorno;
     private String estadoAtual;
     private String resultado;
+    private Integer retardo;
+    private Integer tipo;
 
     public String getAcao() {
         return acao;
+    }
+
+    public Integer getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(Integer tipo) {
+        this.tipo = tipo;
+    }
+
+    public Integer getRetardo() {
+        return retardo;
+    }
+
+    public void setRetardo(Integer retardo) {
+        this.retardo = retardo;
     }
 
     public String getResultado() {
