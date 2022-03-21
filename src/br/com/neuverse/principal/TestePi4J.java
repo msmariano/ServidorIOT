@@ -1,5 +1,6 @@
 package br.com.neuverse.principal;
 
+import com.pi4j.io.gpio.BananaPiPin;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
@@ -19,8 +20,8 @@ public class TestePi4J {
         final GpioController gpio = GpioFactory.getInstance();
 
         // provision gpio pin #01 & #03 as an output pins and blink
-        final GpioPinDigitalOutput led1 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00);
-        final GpioPinDigitalOutput led2 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03);
+        final GpioPinDigitalOutput led1 = gpio.provisionDigitalOutputPin(BananaPiPin.GPIO_00);
+        final GpioPinDigitalOutput led2 = gpio.provisionDigitalOutputPin(BananaPiPin.GPIO_03);
 
         led1.low();
         led1.high();

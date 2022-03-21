@@ -217,6 +217,10 @@ public class Cliente implements Runnable {
 							
 							boolean sair =true;
 							for (Conector con : listaConectores) {
+
+								//AQUI
+
+
 								//boolean bContinuarConectado = false;
 								if(con.getIot().getTipoIOT().equals(conector.getIot().getTipoIOT())
 									&&  con.getIot().getName().equals(conector.getIot().getName())
@@ -226,26 +230,35 @@ public class Cliente implements Runnable {
 									for (ButtonIot buttonIot : listaBiot) {
 										//teste iotservidor
 										if(buttonIot.getButtonID().equals(4)){
-											if(buttonIot.getStatus().equals(Status.OUT)){
-												if(buttonIot.getTecla().equals(Status.ON))
-													Main.motorPiscina("ligar");
-												else
-													Main.motorPiscina("desligar");
+											String ipConector = null;
+											for(Conector ctr : listaConectores){
+												if(ctr.getNome().equals("MotorPiscinaConectorMatinhos")){
+													ipConector = ctr.getIp();
+													break;
+												}
 											}
-											else if(buttonIot.getStatus().equals(Status.READ)){
-												buttonIot.setFuncao(Status.INTERRUPTOR);
-												ComandoIOT ciot = Main.motorPiscina("estadoAtual");
-												if(ciot!=null){
-													switch(Integer.parseInt(ciot.getResultado())){
-														case 0:
-															buttonIot.setStatus(Status.OFF);
-															break;
-														case 1:
-															buttonIot.setStatus(Status.ON);
-															break;
-														default:
-															buttonIot.setStatus(Status.OFF);
-															break;
+											if(ipConector!=null){
+												if(buttonIot.getStatus().equals(Status.OUT)){
+													if(buttonIot.getTecla().equals(Status.ON))
+														Main.motorPiscina("ligar",ipConector);
+													else
+														Main.motorPiscina("desligar",ipConector);
+												}
+												else if(buttonIot.getStatus().equals(Status.READ)){
+													buttonIot.setFuncao(Status.INTERRUPTOR);
+													ComandoIOT ciot = Main.motorPiscina("estadoAtual",ipConector);
+													if(ciot!=null){
+														switch(Integer.parseInt(ciot.getResultado())){
+															case 0:
+																buttonIot.setStatus(Status.OFF);
+																break;
+															case 1:
+																buttonIot.setStatus(Status.ON);
+																break;
+															default:
+																buttonIot.setStatus(Status.OFF);
+																break;
+														}
 													}
 												}
 											}

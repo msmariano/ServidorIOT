@@ -6,9 +6,44 @@ import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 
 public class Conector {
+	
 	private String id;
+	private String usuario;
+	private String senha;
+	private String ip;
+	private String nome;
+	private Iot iot;
+	private ControllerIot controlerIot;
+	private TipoIOT tipo;
+	private Status status;
+	private Mensagem mens;
+	private String erro;
+	private List<String> iots;
+	private String acao;
+	private String mac;
+	private String reqRet;
+	
+
 	public String getId() {
 		return id;
+	}
+	public String getReqRet() {
+		return reqRet;
+	}
+	public void setReqRet(String reqRet) {
+		this.reqRet = reqRet;
+	}
+	public String getMac() {
+		return mac;
+	}
+	public void setMac(String mac) {
+		this.mac = mac;
+	}
+	public String getAcao() {
+		return acao;
+	}
+	public void setAcao(String acao) {
+		this.acao = acao;
 	}
 	public void setId(String id) {
 		this.id = id;
@@ -79,16 +114,6 @@ public class Conector {
 	public void setIots(List<String> iots) {
 		this.iots = iots;
 	}
-	private String usuario;
-	private String senha;
-	private String ip;
-	private String nome;
-	private Iot iot;
-	private ControllerIot controlerIot;
-	private TipoIOT tipo;
-	private Status status;
-	private Mensagem mens;
-	private String erro;
-	private List<String> iots;
+	
 		
 }

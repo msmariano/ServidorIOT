@@ -13,6 +13,29 @@ public class Log {
 		
 
 		System.out.println(sdf.format(new Date())+" "+mensLog);
+
+
+		//BufferedWriter bw;
+		try {
+			//bw = new BufferedWriter(new FileWriter("log.txt",true));
+			//bw.write(mensLog+"\n");
+			//bw.close();
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+	}
+
+	public static void log(Object classe,String mensLog) {
+		SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy HH:mm:ss");
+		
+
+		System.out.println(sdf.format(new Date())+"["+classe+"]:"+mensLog);
+
+		
 		//BufferedWriter bw;
 		try {
 			//bw = new BufferedWriter(new FileWriter("log.txt",true));

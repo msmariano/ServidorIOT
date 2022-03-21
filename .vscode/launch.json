@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch TestaServidorRest",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.TestaServidorRest",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "Launch ControleMotorPiscina",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.ControleMotorPiscina",

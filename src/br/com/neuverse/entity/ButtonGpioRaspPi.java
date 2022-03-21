@@ -19,6 +19,7 @@ public class ButtonGpioRaspPi {
     private final GpioPinDigitalInput comando;
 
     public ButtonGpioRaspPi(Integer gpioInterruptor,Integer gpioComando,Integer p){
+        System.out.println("I:"+gpioInterruptor+" C:"+gpioComando);
         gpio = GpioFactory.getInstance();
         tipo = p;
         interruptor = gpio.provisionDigitalOutputPin(RaspiPin.getPinByAddress(gpioInterruptor));

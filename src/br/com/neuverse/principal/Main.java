@@ -38,6 +38,8 @@ import br.com.neuverse.entity.Conector;
 import br.com.neuverse.entity.InfoServidor;
 import br.com.neuverse.entity.Iot;
 import br.com.neuverse.entity.IotServidor;
+import br.com.neuverse.entity.ServidorRest;
+import br.com.neuverse.entity.Versao;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 
@@ -146,6 +148,8 @@ public class Main {
 			servidor = new ServerSocket(mainServidor.serverPort);
 			Log.grava(String.valueOf(mainServidor.serverPort));
 			mainServidor.listaConectores = new ArrayList<>();
+			ServidorRest servidorRest = new ServidorRest();
+			servidorRest.setListaConectores(mainServidor.listaConectores);
 			Conector conector = new Conector();
 			conector.setId("");
 			conector.setNome("ServidorMatinhos");
@@ -176,11 +180,11 @@ public class Main {
 			//mainServidor.listaConectores.add(conectorPiscina);
 			mainServidor.clientes = new ArrayList<>();
 			mainServidor.listaGpioButtons  = new ArrayList<>();
-			Integer keys[][] = {{0,1},{8,9},{15,16},{4,5}};
+			Integer keys[][] = {{0,1},{8,9},{15,16}};
 			Integer p[] = {1,1,1,1};
 
 			List<ButtonIot> buttons = new ArrayList<>();
-			for(int i=0;i < 4;i++){
+			for(int i=0;i < 3;i++){
 				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(keys[i][0],keys[i][1],p[i]);
 				bgrpi.setId(i);
 				mainServidor.listaGpioButtons.add(bgrpi);
@@ -197,7 +201,8 @@ public class Main {
 			String jSon = gson.toJson(buttons);
 			conector.getIot().setjSon(jSon);
 			
-			System.out.println("Versao 1.0.7 18/01/2022 00:56");
+			Log.log(mainServidor,Versao.ver());
+		   
 
 			//temporizador filtro piscina
 			new Thread() {
@@ -205,7 +210,7 @@ public class Main {
 				public void run() {
 					
 					try {
-						Main.motorPiscina("ligar");
+						//Main.motorPiscina("ligar");
 					} catch (Exception e2) {
 						// TODO Auto-generated catch block
 						e2.printStackTrace();
@@ -215,7 +220,7 @@ public class Main {
 					} catch (InterruptedException e1) {					
 					}
 					try {
-						Main.motorPiscina("desligar");
+						//Main.motorPiscina("desligar");
 					} catch (Exception e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
@@ -234,9 +239,9 @@ public class Main {
 						|| hora.equals("18:00")){
 							try {
 								Log.grava("Inicio Timer");
-								Main.motorPiscina("ligar");
+								//Main.motorPiscina("ligar");
 								Thread.sleep(15*60*1000);
-								Main.motorPiscina("desligar");
+								//Main.motorPiscina("desligar");
 								Log.grava("Fim Timer");
 							} catch (Exception e) {
 								
@@ -301,11 +306,11 @@ public class Main {
 			}.start();
 		}
 	}
-	public static ComandoIOT motorPiscina(String acao) throws Exception {
+	public static ComandoIOT motorPiscina(String acao,String uri) throws Exception {
         SimpleDateFormat sd = new SimpleDateFormat("HH:mm");
 		String hora = sd.format(new Date());
         System.out.println(hora); 
-        URL url = new URL("http://192.168.0.241");
+        URL url = new URL("http://"+uri);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(HttpMethod.POST);
         con.setRequestProperty("Content-Type", "application/json");

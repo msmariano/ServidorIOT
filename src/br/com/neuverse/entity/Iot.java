@@ -8,12 +8,26 @@ public class Iot {
 	private String id;
 	private String name;
 	private String jSon;
+	private String objeto;
+	private String protocolo;
 	private TipoIOT tipoIOT;
 	private String ip;
 	private List<IotServidor> servidores;
 	
 	public String getId() {
 		return id;
+	}
+	public String getProtocolo() {
+		return protocolo;
+	}
+	public void setProtocolo(String protocolo) {
+		this.protocolo = protocolo;
+	}
+	public String getObjeto() {
+		return objeto;
+	}
+	public void setObjeto(String objeto) {
+		this.objeto = objeto;
 	}
 	public String getIp() {
 		return ip;

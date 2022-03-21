@@ -31,16 +31,16 @@ public class ControleMotorPiscina {
             Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
             String jSon = "";
             ConfigIOT configIOT = new ConfigIOT();
-            com.setAcao("retConfig");
+             com.setAcao("retConfig");
             jSon = gson.toJson(com);
             cr.setIp("192.168.4.1");
             com = cr.sendRest(jSon);
-            configIOT = gson.fromJson(com.getResultado(), ConfigIOT.class);
+            //configIOT = gson.fromJson(com.getResultado(), ConfigIOT.class);
 
 
-            configIOT.getSsidSessao().setSsid("Mariano_2G");
-            configIOT.getSsidSessao().setPassword("20061977");
-            configIOT.getServidorSessao().setEndereco("192.168.0.254");
+            configIOT.getSsidSessao().setSsid("neuverseServidorIot");
+            configIOT.getSsidSessao().setPassword(" nileindrei");
+            configIOT.getServidorSessao().setEndereco("192.168.10.1");
             configIOT.getServidorSessao().setPorta(27015);
             jSon = gson.toJson(configIOT);
 
