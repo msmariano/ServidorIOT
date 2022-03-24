@@ -22,10 +22,17 @@ public class Conector {
 	private String acao;
 	private String mac;
 	private String reqRet;
+	private String timeStampAlive;
 	
 
 	public String getId() {
 		return id;
+	}
+	public String getTimeStampAlive() {
+		return timeStampAlive;
+	}
+	public void setTimeStampAlive(String timeStampAlive) {
+		this.timeStampAlive = timeStampAlive;
 	}
 	public String getReqRet() {
 		return reqRet;

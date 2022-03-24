@@ -1,10 +1,36 @@
 package br.com.neuverse.entity;
 
+import java.util.List;
+
 public class ConfigIOT {
 
     public ConfigIOT(){
         ssidSessao = new SsidSessao();
         servidorSessao = new ServidorSessao();
+    }
+
+    public ConectorSessao getConectorSessao() {
+        return conectorSessao;
+    }
+
+    public void setConectorSessao(ConectorSessao conectorSessao) {
+        this.conectorSessao = conectorSessao;
+    }
+
+    public ServidorRestSessao getServidorRestSessao() {
+        return servidorRestSessao;
+    }
+
+    public void setServidorRestSessao(ServidorRestSessao servidorRestSessao) {
+        this.servidorRestSessao = servidorRestSessao;
+    }
+
+    public List<ButtonIot> getButtonIOTSessao() {
+        return buttonIOTSessao;
+    }
+
+    public void setButtonIOTSessao(List<ButtonIot> buttonIOTSessao) {
+        this.buttonIOTSessao = buttonIOTSessao;
     }
 
     public ServidorSessao getServidorSessao() {
@@ -17,6 +43,8 @@ public class ConfigIOT {
 
     private SsidSessao ssidSessao;
     private ServidorSessao servidorSessao;
+    private ServidorRestSessao servidorRestSessao;
+    private ConectorSessao conectorSessao;
 
     public class ServidorSessao{
         private String endereco;
@@ -60,5 +88,43 @@ public class ConfigIOT {
     public void setSsidSessao(SsidSessao ssidSessao) {
         this.ssidSessao = ssidSessao;
     }
+
+    public class ServidorRestSessao {
+        private String ip;
+        private Integer porta;
+
+        public String getIp() {
+            return ip;
+        }
+        public Integer getPorta() {
+            return porta;
+        }
+        public void setPorta(Integer porta) {
+            this.porta = porta;
+        }
+        public void setIp(String ip) {
+            this.ip = ip;
+        }
+    }
+
+    public class ConectorSessao{
+        private String usuario;
+        private String senha;
+        public String getUsuario() {
+            return usuario;
+        }
+        public String getSenha() {
+            return senha;
+        }
+        public void setSenha(String senha) {
+            this.senha = senha;
+        }
+        public void setUsuario(String usuario) {
+            this.usuario = usuario;
+        }
+    }
+    
+
+    private  List<ButtonIot> buttonIOTSessao; 
     
 }

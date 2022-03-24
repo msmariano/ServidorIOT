@@ -183,7 +183,7 @@ public class Main {
 			Integer keys[][] = {{0,1},{8,9},{15,16}};
 			Integer p[] = {1,1,1,1};
 
-			List<ButtonIot> buttons = new ArrayList<>();
+			/*List<ButtonIot> buttons = new ArrayList<>();
 			for(int i=0;i < 3;i++){
 				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(keys[i][0],keys[i][1],p[i]);
 				bgrpi.setId(i);
@@ -199,7 +199,7 @@ public class Main {
 			buttons.add(bIot);
 			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 			String jSon = gson.toJson(buttons);
-			conector.getIot().setjSon(jSon);
+			conector.getIot().setjSon(jSon);*/
 			
 			Log.log(mainServidor,Versao.ver());
 		   

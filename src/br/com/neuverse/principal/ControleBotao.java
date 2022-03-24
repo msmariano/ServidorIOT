@@ -19,6 +19,8 @@ import br.com.neuverse.entity.Iot;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 
+
+
 public class ControleBotao {
 
 	private Status statusRetornado;

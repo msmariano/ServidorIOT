@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -96,9 +97,15 @@ public class ServidorRest implements HttpHandler {
                     if(conRetirar!=null){
                         listaConectores.remove(conRetirar);
                         plug.setReqRet("alive");
+                        Date date = new Date();
+                        plug.setTimeStampAlive(String.valueOf(date.getTime()));
                     }   
-                    else
-                        plug.setReqRet("plug");                     
+                    else{
+                        plug.setReqRet("plug");  
+                        Date date = new Date();
+                        plug.setTimeStampAlive(String.valueOf(date.getTime()));
+                    }
+                        
                     plug.setId(id);
                     listaConectores.add(plug);                    
                 }

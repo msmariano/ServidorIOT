@@ -5,6 +5,9 @@ import br.com.neuverse.enumerador.Status;
 public class ButtonIot {
 	private Status tecla;
 	private Integer buttonID;
+	private Integer gpioNumControle;
+	private String nomeGpio;
+	private Integer gpioNum;
 	private Status status;
 	private String jSon;
 	private Status funcao;
@@ -12,6 +15,30 @@ public class ButtonIot {
 
 	public Status getTecla() {
 		return tecla;
+	}
+
+	public Integer getGpioNumControle() {
+		return gpioNumControle;
+	}
+
+	public void setGpioNumControle(Integer gpioNumControle) {
+		this.gpioNumControle = gpioNumControle;
+	}
+
+	public Integer getGpioNum() {
+		return gpioNum;
+	}
+
+	public void setGpioNum(Integer gpioNum) {
+		this.gpioNum = gpioNum;
+	}
+
+	public String getNomeGpio() {
+		return nomeGpio;
+	}
+
+	public void setNomeGpio(String nomeGpio) {
+		this.nomeGpio = nomeGpio;
 	}
 
 	public String getIp() {
