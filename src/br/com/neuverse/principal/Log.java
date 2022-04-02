@@ -29,26 +29,24 @@ public class Log {
 		
 	}
 
-	public static void log(Object classe,String mensLog) {
+	public static void log(Object classe,String mensLog,String tipo) {
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy HH:mm:ss");
 		
 
-		System.out.println(sdf.format(new Date())+"["+classe+"]:"+mensLog);
+		//if(tipo.equals("DEBUG"))
+			System.out.println("["+tipo+"] "+sdf.format(new Date())+"["+classe+"]:"+mensLog);
 
 		
-		//BufferedWriter bw;
-		try {
-			//bw = new BufferedWriter(new FileWriter("log.txt",true));
-			//bw.write(mensLog+"\n");
-			//bw.close();
+		if(tipo.contains("SALVAR")){
+			BufferedWriter bw;
+			try {
+				bw = new BufferedWriter(new FileWriter("log.txt",true));
+				bw.write(mensLog+"\n");
+				bw.close();
+				
+			} catch (Exception e) {
 			
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
+			}
+		}		
 	}
-	
-
 }

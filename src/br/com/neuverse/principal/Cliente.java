@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,6 +46,7 @@ public class Cliente implements Runnable {
 	public BufferedReader entrada;
 	private String nomeIotCliente;
 	private String ipCliente;
+	private Boolean isLogado = false;
 
 	public String getNomeIotCliente() {
 		return nomeIotCliente;
@@ -70,347 +72,189 @@ public class Cliente implements Runnable {
 		this.nomeIotCliente = nomeIotCliente;
 	}
 
+	public void processar(Conector con) throws IOException, SQLException{
+		switch(con.getStatus()) {
+			case LISTA_IOT:
+			break;
+			case ACIONARBOTAO:
+				break;
+			case ALEATORIOINFO:
+				break;
+			case ALEATORIOOFF:
+				break;
+			case ALEATORIOON:
+				break;
+			case ALIVE:
+				if(isLogado)
+					processarAlive(con);
+				else
+					socketCliente.close();
+				break;
+			case CONECTADO:
+				break;
+			case CONFIG:
+				break;
+			case CONTROLLERCOMMAND:
+				break;
+			case ERRO:
+				break;
+			case FAIL:
+				break;
+			case GETVALUE:
+				break;
+			case HIGH:
+				break;
+			case HOLD:
+				break;
+			case IN:
+				break;
+			case INFO_SERVIDOR:
+				break;
+			case INTERRUPTOR:
+				break;
+			case JSON:
+				break;
+			case LOGIN:
+				processarLogin(con);
+				if(!isLogado)
+					socketCliente.close();
+				break;
+			case LOGINWITHCOMMAND:
+				processarLoginWithCommand(con);
+				break;
+			case LOGIN_FAIL:
+				break;
+			case LOGIN_OK:
+				break;
+			case LOW:
+				break;
+			case NA:
+				break;
+			case OFF:
+				break;
+			case ON:
+				break;
+			case OUT:
+				break;
+			case PUSH:
+				break;
+			case READ:
+				break;
+			case RETORNO:
+				break;
+			case RETORNOTRANSITORIO:
+				break;
+			case SUCESSO:
+				break;
+			case VOID:
+				break;
+			default:
+				break;			
+		}
+	}
+
+	public boolean validarLogin(Conector con){
+		Usuario usuario;
+		try {
+			usuario = new Usuario();
+			return usuario.retornaUsuario(con.getUsuario(), con.getSenha());
+		} catch (SQLException e) {
+			
+		}
+		return false;
+	}
+
+	public void processarLoginWithCommand(Conector conector){
+		for (Conector con : listaConectores) {
+		}
+	}
+
+	public void processarAlive(Conector conector){
+		if(validarLogin(conector)){
+			conector.setStatus(Status.CONECTADO);
+			SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
+			Mensagem mensagem = new Mensagem();
+			mensagem.setMens(sdf.format(new Date()));
+			conector.setMens(mensagem);
+			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+			String jSon = gson.toJson(conector);
+			enviar(jSon + "\r\n");
+			Log.log(this,"Alive:"+conector.getNome()+" "+conector.getMens().getMens(),"INFO");
+		} else
+			try {
+				socketCliente.close();
+			} catch (IOException e) {
+			}
+	}
+
+	public Boolean processarLogin(Conector conector) throws SQLException{		
+		Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+		Usuario usuario = new Usuario();
+		usuario.setSenha(conector.getSenha());
+		usuario.setUsuario(conector.getUsuario());
+		usuario.obterPorUsuarioSenha();
+		if(usuario.getId()!=null) {
+			conector.setStatus(Status.LOGIN_OK);
+			List<String> iots = new ArrayList<String>();
+			for (Conector con : listaConectores) {
+				iots.add(con.getIot().getName());
+			}
+			conector.setIots(iots);
+			UUID uniqueKey = UUID.randomUUID();
+			conector.setId(uniqueKey.toString());
+			uniqueKey = UUID.randomUUID();
+			conector.setId(uniqueKey.toString());
+			id = uniqueKey.toString();
+			Log.grava("Inserindo["+conector.getNome()+"] id: "+conector.getId());
+			isLogado = true;
+		}
+		else {
+			conector.setStatus(Status.LOGIN_FAIL);
+		}		
+		String jSon = gson.toJson(conector);
+		enviar(jSon + "\r\n");
+		return isLogado;
+	}
+
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		try {
-			 entrada = new BufferedReader(new InputStreamReader(socketCliente.getInputStream()));
-
+			entrada = new BufferedReader(new InputStreamReader(socketCliente.getInputStream()));
 			while (true) {
 				String mens = entrada.readLine();
 				if (mens == null){
-					Log.grava("Mensagem vazia");
+					Log.log(this,"Mensagem vazia","INFO");
 					break;
 				}
 				Log.grava(mens);
 				Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 				try {
-					Conector conector = gson.fromJson(mens, Conector.class);
-					Log.grava("Status:"+conector.getStatus().toString());
-					if (conector.getStatus() == Status.INFO_SERVIDOR) {
-						InfoServidor infoServidor = new InfoServidor();
-						infoServidor.setNomeServidor("Servidor MsMariano");
-						infoServidor.setDataAtual(new Date());
-						String nomecomputador=InetAddress.getLocalHost().getHostName();
-						infoServidor.setIp(InetAddress.getLocalHost().getHostAddress());
-						infoServidor.setNomeComputador(nomecomputador);
-						String jSon = gson.toJson(infoServidor);
-						enviar(jSon + "\r\n");
+					if(!mens.equals("")) {
+						Conector conector = gson.fromJson(mens, Conector.class);
+						processar(conector);
 					}
-					if(conector.getStatus() == Status.LISTA_IOT) {
-						List<String> iots = new ArrayList<String>();
-						for (Conector con : listaConectores) {
-							iots.add(con.getIot().getName());
-						}
-						String jSon = gson.toJson(iots);
-						enviar(jSon + "\r\n");
-						continue;
-						
-					}					
-					if (conector.getStatus() == Status.LOGIN) {
-						
-						
-						if(conector.getTipo()!=null && conector.getTipo().equals(TipoIOT.HUMAN)) {
-							
-							Usuario usuario = new Usuario();
-							usuario.setSenha(conector.getSenha());
-							usuario.setUsuario(conector.getUsuario());
-							usuario.obterPorUsuarioSenha();
-							if(usuario.getId()!=null) {
-								conector.setStatus(Status.LOGIN_OK);
-								List<String> iots = new ArrayList<String>();
-								for (Conector con : listaConectores) {
-									iots.add(con.getIot().getName());
-								}
-								conector.setIots(iots);
-								UUID uniqueKey = UUID.randomUUID();
-								conector.setId(uniqueKey.toString());
-								uniqueKey = UUID.randomUUID();
-								conector.setId(uniqueKey.toString());
-								id = uniqueKey.toString();
-								Log.grava("Inserindo["+conector.getNome()+"] id: "+conector.getId());
-							}
-							else {
-								conector.setStatus(Status.LOGIN_FAIL);
-							}
-							
-							
-							String jSon = gson.toJson(conector);
-							enviar(jSon + "\r\n");
-							break;
-							
-							
-							
-						}
-						else if (conector.getSenha().equals("M@r0403") && conector.getUsuario().equals("Matinhos")) {
-
-							for (Conector con : listaConectores) {
-								if (con.getNome().equals(conector.getNome())) {
-									listaConectores.remove(con);
-									
-									for(Cliente c : clientes) {
-										if(c.getNomeIotCliente().equals(conector.getNome())) {
-											try {
-												Log.grava("Removendo["+con.getNome()+"]  id: "+c.getId());
-												clientes.remove(c);												
-												c.socketCliente.close();							
-												
-											}catch (Exception e) {
-												// TODO: handle exception
-											}
-											break;
-										}
-									}
-								}
-								break;
-							}
-
-							setNomeIotCliente(conector.getNome());
-							conector.setErro("Sucesso.");
-							conector.setStatus(Status.CONECTADO);
-							UUID uniqueKey = UUID.randomUUID();
-							conector.getIot().setId(uniqueKey.toString());
-							uniqueKey = UUID.randomUUID();
-							conector.setId(uniqueKey.toString());
-							id = uniqueKey.toString();
-							String jSon = gson.toJson(conector);
-							Log.grava("Inserindo["+conector.getNome()+"] id: "+conector.getId());
-							listaConectores.add(conector);
-							enviar(jSon + "\r\n");
-							continue;
-						} else {
-							conector.setErro("Login falhou.Verifique seu usuario/senha.");
-							conector.setStatus(Status.FAIL);
-							String jSon = gson.toJson(conector);
-							enviar(jSon + "\r\n");
-							Thread.sleep(5000);
-							socketCliente.close();
-							break;
-						}
-					}
-					if (conector.getStatus() == Status.RETORNO) {
-						String jSon = gson.toJson(conector);
-						for (Cliente cli : clientes) {
-							if (conector.getId().equals(cli.getId())) {
-								System.err.println("RETORNO: "+ jSon);
-								cli.enviar(jSon + "\r\n");
-								cli.getSocketCliente().close();
-								break;
-							}
-						}						
-						continue;						
-					}
-					if(conector.getStatus() == Status.CONFIG) {
-						
-						
-						
-						
-					}
-					if (conector.getStatus() == Status.LOGINWITHCOMMAND) {
-						if (conector.getSenha().equals("M@r0403") && conector.getUsuario().equals("Matinhos")) {
-							conector.setErro("Sucesso.");
-							UUID uniqueKey = UUID.randomUUID();
-							conector.getIot().setId(uniqueKey.toString());
-							uniqueKey = UUID.randomUUID();
-							conector.setId(uniqueKey.toString());
-							id = uniqueKey.toString();
-							
-							boolean sair =true;
-							for (Conector con : listaConectores) {
-
-								//AQUI
-
-
-								//boolean bContinuarConectado = false;
-								if(con.getIot().getTipoIOT().equals(conector.getIot().getTipoIOT())
-									&&  con.getIot().getName().equals(conector.getIot().getName())
-									&& con.getIot().getTipoIOT().equals(TipoIOT.SERVIDOR)){
-									Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
-									List<ButtonIot> listaBiot = gson.fromJson(conector.getIot().getjSon(),listType);
-									for (ButtonIot buttonIot : listaBiot) {
-										//teste iotservidor
-										if(buttonIot.getButtonID().equals(4)){
-											String ipConector = null;
-											for(Conector ctr : listaConectores){
-												if(ctr.getNome().equals("MotorPiscinaConectorMatinhos")){
-													ipConector = ctr.getIp();
-													break;
-												}
-											}
-											if(ipConector!=null){
-												if(buttonIot.getStatus().equals(Status.OUT)){
-													if(buttonIot.getTecla().equals(Status.ON))
-														Main.motorPiscina("ligar",ipConector);
-													else
-														Main.motorPiscina("desligar",ipConector);
-												}
-												else if(buttonIot.getStatus().equals(Status.READ)){
-													buttonIot.setFuncao(Status.INTERRUPTOR);
-													ComandoIOT ciot = Main.motorPiscina("estadoAtual",ipConector);
-													if(ciot!=null){
-														switch(Integer.parseInt(ciot.getResultado())){
-															case 0:
-																buttonIot.setStatus(Status.OFF);
-																break;
-															case 1:
-																buttonIot.setStatus(Status.ON);
-																break;
-															default:
-																buttonIot.setStatus(Status.OFF);
-																break;
-														}
-													}
-												}
-											}
-											break;
-										}
-										else if(buttonIot.getStatus().equals(Status.OUT)){
-											for (ButtonGpioRaspPi bgrpi : listaGpioButtons) {
-												if(bgrpi.getId().equals(buttonIot.getButtonID())){
-													if(buttonIot.getTecla().equals(Status.ON))
-														bgrpi.ligar();
-													else
-														bgrpi.desligar();
-													break;
-												}									
-											}
-										}
-										else if(buttonIot.getStatus().equals(Status.READ)){
-											for (ButtonGpioRaspPi bgrpi : listaGpioButtons) {
-												if(bgrpi.getId().equals(buttonIot.getButtonID())){
-													buttonIot.setStatus(bgrpi.getStatus());
-													buttonIot.setFuncao(Status.INTERRUPTOR);
-													break;
-												}									
-											}
-											//bContinuarConectado = true;
-										}
-									}
-									
-									
-									conector.setStatus(Status.RETORNO);
-									String jSonListaBtn = gson.toJson(listaBiot,listType);
-									conector.getIot().setjSon(jSonListaBtn);
-									String jSon = gson.toJson(conector);
-									enviar(jSon + "\r\n");
-									//if(!bContinuarConectado)
-									//	getSocketCliente().close();
-									sair = false;
-									break;
-
-								}
-								
-								else if (con.getIot().getName().equals(conector.getIot().getName())) {
-									conector.setStatus(Status.CONTROLLERCOMMAND);
-									for (Cliente cli : clientes) {
-										if (con.getId().equals(cli.getId())) {
-											String jSonComando = gson.toJson(conector);
-											System.err.println("LOGINWITHCOMMAND->CONTROLLERCOMMAND json: "+conector.getIot().getjSon());
-											
-											Conector cr = new Conector();
-											cr.setId(id);
-											cr.setStatus(Status.RETORNOTRANSITORIO);
-											Mensagem mensRet = new Mensagem();
-											mensRet.setId(id);
-											mensRet.setSt(Status.SUCESSO);
-											mensRet.setMens("Comando enviando,por favor aguarde.");
-											cr.setMens(mensRet);
-											String ret  = gson.toJson(cr);
-											enviar(ret);
-											
-											cli.enviar(jSonComando + "\r\n");
-											sair = false;	
-											break;
-										}
-									}									
-									break;
-								}
-							}
-							if(sair) {
-								System.err.println("LOGINWITHCOMMAND nao encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
-								
-								Conector cr = new Conector();
-								cr.setId(id);
-								cr.setStatus(Status.RETORNOTRANSITORIO);
-								Mensagem mensRet = new Mensagem();
-								mensRet.setId(id);
-								mensRet.setMens("LOGINWITHCOMMAND nao encontrdo conector:"+conector.getIot().getName()+ " por "+conector.getNome());
-								cr.setMens(mensRet);
-								mensRet.setSt(Status.ERRO);
-								String ret  = gson.toJson(cr);
-								enviar(ret);								
-								socketCliente.close();
-								break;
-							}
-						} else {
-							conector.setErro("Login falhou.Verifique seu usuario/senha.");
-							conector.setStatus(Status.FAIL);
-							String jSon = gson.toJson(conector);
-							enviar(jSon + "\r\n");
-							Thread.sleep(5000);
-							socketCliente.close();
-							break;
-						}
-					} else if (conector.getStatus() == Status.CONTROLLERCOMMAND) {
-						for (Conector con : listaConectores) {
-							if (con.getIot().getName().equals(conector.getIot().getName())) {
-								con.getIot().setjSon(conector.getIot().getjSon());
-								con.setStatus(Status.CONTROLLERCOMMAND);
-								for (Cliente cli : clientes) {
-									if (con.getId().equals(cli.getId())) {
-										String jSon = gson.toJson(con);
-										//System.err.println(jSon);
-										cli.enviar(jSon + "\r\n");
-										break;
-									}
-								}
-								break;
-							}
-						}
-						String jSon = gson.toJson(conector);
-						enviar(jSon + "\r\n");
-				
-					} else if (conector.getStatus() == Status.ALIVE) {
-						conector.setStatus(Status.CONECTADO);
-						SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
-						Mensagem mensagem = new Mensagem();
-						mensagem.setMens(sdf.format(new Date()));
-						conector.setMens(mensagem);
-						String jSon = gson.toJson(conector);
-						enviar(jSon + "\r\n");
-						Log.grava("Alive:"+conector.getNome()+" "+conector.getMens().getMens());
-						continue;
-					} else {
-						socketCliente.close();
-						break;
-					}
-
 				} catch (Exception e) {
-					Log.grava("mensagem inválida:"+e.getMessage());
+					Log.log(this,"mensagem inválida:"+e.getMessage(),"ERROR");
 					socketCliente.close();
 					break;
 				}
 			}
 		} catch (Exception e) {
 			try {
-				Log.grava("Exception_1:"+e.getMessage());
+				Log.log(this,"Exception_1:"+e.getMessage(),"ERROR");
 				socketCliente.close();
-
 			} catch (IOException e1) {
 			}
-		}
-		
-		
-		Log.grava("Cliente desconectando:"+this.getId());
+		}		
+		Log.log(this,"Cliente desconectando:"+this.getId(),"INFO");
 		for (Conector con : listaConectores) {
 			if (con.getId().equals(getId()) && !con.getTipo().equals(TipoIOT.SERVIDOR)) {
-				Log.grava("Removendo conector:"+con.getNome());
+				Log.log(this,"Removendo conector:"+con.getNome(),"INFO");
 				listaConectores.remove(con);
 				break;
 			}			
 		}
 		clientes.remove(this);
-
 	}
 
 	public synchronized void enviar(String mens) {
@@ -419,13 +263,6 @@ public class Cliente implements Runnable {
 			saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
 			saida.write(mens);
 			saida.flush();
-			/*try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}*/
-			// saida.close();
 		} catch (IOException e) {
 			Log.grava(e.getMessage());
 		}

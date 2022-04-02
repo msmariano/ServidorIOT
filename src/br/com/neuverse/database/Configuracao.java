@@ -1,5 +1,6 @@
 package br.com.neuverse.database;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -14,6 +15,17 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 
 	}
 	
+	public Integer retornaPortaServidor() {
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("SELECT C1 FROM CONFIGURACAO where parametro = 'endServidor'");
+			if(rs.next()) {
+				return Integer.parseInt(rs.getString("C1"));
+			}
+		} catch (SQLException e) {			
+		}
+		return null;
+	}		
 
 	@Override
 	public List<Object> listar() {

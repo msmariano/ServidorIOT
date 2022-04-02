@@ -1,5 +1,6 @@
 package br.com.neuverse.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConfigIOT {
@@ -7,6 +8,18 @@ public class ConfigIOT {
     public ConfigIOT(){
         ssidSessao = new SsidSessao();
         servidorSessao = new ServidorSessao();
+        servidorRestSessao = new ServidorRestSessao();
+        conectorSessao = new ConectorSessao();
+        buttonIOTSessao = new ArrayList<>();
+        
+    }
+
+    public String getDataAtualizacao() {
+        return dataAtualizacao;
+    }
+
+    public void setDataAtualizacao(String dataAtualizacao) {
+        this.dataAtualizacao = dataAtualizacao;
     }
 
     public ConectorSessao getConectorSessao() {
@@ -110,8 +123,23 @@ public class ConfigIOT {
     public class ConectorSessao{
         private String usuario;
         private String senha;
+        private String nome;
+        private Integer id;
+        
         public String getUsuario() {
             return usuario;
+        }
+        public Integer getId() {
+            return id;
+        }
+        public void setId(Integer id) {
+            this.id = id;
+        }
+        public String getNome() {
+            return nome;
+        }
+        public void setNome(String nome) {
+            this.nome = nome;
         }
         public String getSenha() {
             return senha;
@@ -126,5 +154,6 @@ public class ConfigIOT {
     
 
     private  List<ButtonIot> buttonIOTSessao; 
+    private String dataAtualizacao;
     
 }

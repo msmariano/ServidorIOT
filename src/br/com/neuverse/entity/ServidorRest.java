@@ -22,6 +22,8 @@ import br.com.neuverse.principal.Log;
 public class ServidorRest implements HttpHandler {
     private HttpServer httpServer;
     private List<Conector> listaConectores;
+    private InfoServidor infoServidor;
+
     
     public ServidorRest(){
         try {
@@ -29,10 +31,55 @@ public class ServidorRest implements HttpHandler {
             httpServer.createContext("/ServidorIOT", this);
             httpServer.setExecutor(null);
             this.httpServer.start();
-
         } catch (IOException e) {
             
         }
+    }
+
+    public void monitoraConectores(ServidorRest sr){        
+        new Thread() {
+            @Override
+            public void run() {
+                Log.log(sr, "Iniciando monitoraConectores()","INFO");
+                while (true) {
+                    try {
+                        for(Conector con :listaConectores){  
+                            if(con != null){
+                                if(con.getTimeStampAlive()!=null) {
+                                    Date data = new Date();                          
+                                    Long t = Long.parseLong(con.getTimeStampAlive());
+                                    Log.log(this, "analisando "+con.getNome(), "INFO");
+                                    Log.log(this, "Delta "+(data.getTime() - t), "INFO");
+                                    if((data.getTime() - t)>(60*1000)) {
+                                        listaConectores.remove(con);
+                                        Log.log(this, "Removendo "+con.getNome(), "DEBUG_N5");
+                                        break;
+                                    }
+                                }
+                            }   
+                        }                        
+                    }
+                    catch(Exception e){
+                        Log.log(this, "erro monitoraConectores "+e.getMessage(), "DEBUG_N5");
+                    }
+                    try{
+                        Thread.sleep(5000);
+                    }
+                    catch(Exception e){
+
+                    }
+                    
+                }
+            }
+        }.start();
+    }
+
+    public InfoServidor getInfoServidor() {
+        return infoServidor;
+    }
+
+    public void setInfoServidor(InfoServidor infoServidor) {
+        this.infoServidor = infoServidor;
     }
 
     public List<Conector> getListaConectores() {
@@ -71,13 +118,16 @@ public class ServidorRest implements HttpHandler {
             URI uri = exchange.getRequestURI();
 
             if(uri.getPath().equals("/ServidorIOT/info")){
-                send(200,"{\"teste\":1234}",exchange);
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                String jSon = gson.toJson(infoServidor);
+                send(200,jSon,exchange);
             }
             else if(uri.getPath().equals("/ServidorIOT/plugon")){
                 boolean bConfigure = true;
-                Log.log(this,"plugon");
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                 Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
+                Log.log(this,"plugon origem:" + plug.getIp(),"INFO");
                 UUID uniqueKey = UUID.randomUUID();
                 String id = uniqueKey.toString();
                 for(Conector con :listaConectores){
@@ -113,7 +163,7 @@ public class ServidorRest implements HttpHandler {
                 send(200,gson.toJson(plug),exchange);
             }
             else if(uri.getPath().equals("/ServidorIOT/listarIOTs")){
-                Log.log(this,"listarIOTs");
+                Log.log(this,"listarIOTs","INFO");
                 List<String> iots = new ArrayList<>();
                 for(Conector con :listaConectores){
                     iots.add(con.getNome());
@@ -129,7 +179,6 @@ public class ServidorRest implements HttpHandler {
         else{
             send(405,"",exchange);
         }
-    }
-   
+    }   
     
 }

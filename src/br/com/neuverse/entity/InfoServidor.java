@@ -7,8 +7,16 @@ public class InfoServidor {
 	private Date dataAtual;
 	private String ip;
 	private String nomeComputador;
+	private String versao;
+
 	public String getNomeServidor() {
 		return nomeServidor;
+	}
+	public String getVersao() {
+		return versao;
+	}
+	public void setVersao(String versao) {
+		this.versao = versao;
 	}
 	public void setNomeServidor(String nomeServidor) {
 		this.nomeServidor = nomeServidor;

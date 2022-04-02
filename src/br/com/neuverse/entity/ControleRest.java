@@ -35,10 +35,8 @@ public class ControleRest {
         }
         int responseCode = con.getResponseCode();
 
-        System.out.println(responseCode);
-       System.out.println(con.getContentLength());  
-
-
+        System.out.println("Response code:"+responseCode);
+        
         if(responseCode == HttpURLConnection.HTTP_OK){
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputLine;

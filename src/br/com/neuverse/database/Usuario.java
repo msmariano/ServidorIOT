@@ -11,12 +11,22 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 	public Usuario() throws SQLException{
 		super();
 		Statement statement = connection.createStatement();
-		statement.execute("CREATE TABLE IF NOT EXISTS USUARIO ( ID  INTEGER PRIMARY KEY AUTOINCREMENT, USUARIO VARCHAR, SENHA VARCHAR )");
+		statement.execute("CREATE TABLE IF NOT EXISTS USUARIO ( ID  INTEGER PRIMARY KEY AUTOINCREMENT, USUARIO VARCHAR, SENHA VARCHAR,NOME VARCHAR )");
 
 	}
 	
+	public String getNome() {
+		return nome;
+	}
+
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
+
 	private String usuario;
 	private String senha;
+	private String nome;
+	
 	private Integer id;
 	
 	public Integer getId() {
@@ -41,6 +51,23 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 
 	public void setSenha(String senha) {
 		this.senha = senha;
+	}
+
+	public Boolean retornaUsuario(String user,String passwd){
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("select * from usuarios where usuario = "+user+" and senha = "+passwd+"");
+			
+			if(rs.next()) {
+				this.setId(rs.getInt("id"));
+				this.setNome(rs.getString("nome"));
+				this.setSenha(passwd);
+				this.setUsuario(user);
+				return true;
+			}
+		} catch (SQLException e) {			
+		}
+		return false;
 	}
 
 	@Override
@@ -82,7 +109,6 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 			}
 		}
 		catch (Exception e) {
-			// TODO: handle exception
 		}
 		
 	}
