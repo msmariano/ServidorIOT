@@ -6,6 +6,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import br.com.neuverse.principal.Log;
+
 public class Usuario extends Conexao implements Dao<Usuario>{
 	
 	public Usuario() throws SQLException{
@@ -56,7 +58,8 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 	public Boolean retornaUsuario(String user,String passwd){
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet rs = statement.executeQuery("select * from usuarios where usuario = "+user+" and senha = "+passwd+"");
+			String sql = "select * from usuario where usuario = '"+user+"' and senha = '"+passwd+"'";
+			ResultSet rs = statement.executeQuery(sql);
 			
 			if(rs.next()) {
 				this.setId(rs.getInt("id"));
@@ -65,7 +68,9 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 				this.setUsuario(user);
 				return true;
 			}
-		} catch (SQLException e) {			
+		} catch (SQLException e) {
+			Log.log (this,"Erro retornaUsuario"+e.getMessage(),"INFO");
+					
 		}
 		return false;
 	}

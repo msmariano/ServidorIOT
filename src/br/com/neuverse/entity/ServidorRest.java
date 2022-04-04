@@ -48,8 +48,6 @@ public class ServidorRest implements HttpHandler {
                                 if(con.getTimeStampAlive()!=null) {
                                     Date data = new Date();                          
                                     Long t = Long.parseLong(con.getTimeStampAlive());
-                                    Log.log(this, "analisando "+con.getNome(), "INFO");
-                                    Log.log(this, "Delta "+(data.getTime() - t), "INFO");
                                     if((data.getTime() - t)>(60*1000)) {
                                         listaConectores.remove(con);
                                         Log.log(this, "Removendo "+con.getNome(), "DEBUG_N5");
