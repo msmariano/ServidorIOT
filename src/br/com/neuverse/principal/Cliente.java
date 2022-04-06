@@ -84,6 +84,8 @@ public class Cliente implements Runnable {
 				break;
 			case ALEATORIOON:
 				break;
+			case NOTIFICACAO:
+				break;
 			case ALIVE:
 				if(isLogado)
 					processarAlive(con);
@@ -232,6 +234,8 @@ public class Cliente implements Runnable {
 					if(!mens.equals("")) {
 						Conector conector = gson.fromJson(mens, Conector.class);
 						processar(conector);
+						if(!isLogado)
+							break;
 					}
 				} catch (Exception e) {
 					Log.log(this,"mensagem inválida:"+e.getMessage(),"ERROR");
@@ -246,7 +250,10 @@ public class Cliente implements Runnable {
 			} catch (IOException e1) {
 			}
 		}		
-		Log.log(this,"Cliente desconectando:"+this.getId(),"INFO");
+		if(this.getId()!=null)
+			Log.log(this,"Cliente desconectando:"+this.getId(),"INFO");
+		else
+		Log.log(this,"Cliente desconectando!","INFO");
 		for (Conector con : listaConectores) {
 			if (con.getId().equals(getId()) && !con.getTipo().equals(TipoIOT.SERVIDOR)) {
 				Log.log(this,"Removendo conector:"+con.getNome(),"INFO");
