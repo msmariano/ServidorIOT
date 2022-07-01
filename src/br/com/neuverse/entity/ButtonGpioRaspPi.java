@@ -10,6 +10,7 @@ import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
 import br.com.neuverse.enumerador.Status;
+import br.com.neuverse.principal.Log;
 
 public class ButtonGpioRaspPi {
     private Integer id;
@@ -19,7 +20,7 @@ public class ButtonGpioRaspPi {
     private final GpioPinDigitalInput comando;
 
     public ButtonGpioRaspPi(Integer gpioInterruptor,Integer gpioComando,Integer p){
-        System.out.println("I:"+gpioInterruptor+" C:"+gpioComando);
+        Log.log(this,"I:"+gpioInterruptor+" C:"+gpioComando,"INFO");
         gpio = GpioFactory.getInstance();
         tipo = p;
         interruptor = gpio.provisionDigitalOutputPin(RaspiPin.getPinByAddress(gpioInterruptor));

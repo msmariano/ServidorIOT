@@ -3,15 +3,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -29,7 +33,8 @@ public class ServidorRest implements HttpHandler {
         try {
             httpServer = HttpServer.create(new InetSocketAddress(8080), 0);
             httpServer.createContext("/ServidorIOT", this);
-            httpServer.setExecutor(null);
+            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+            httpServer.setExecutor(threadPoolExecutor);
             this.httpServer.start();
         } catch (IOException e) {
             
@@ -48,7 +53,7 @@ public class ServidorRest implements HttpHandler {
                                 if(con.getTimeStampAlive()!=null) {
                                     Date data = new Date();                          
                                     Long t = Long.parseLong(con.getTimeStampAlive());
-                                    if((data.getTime() - t)>(60*1000)) {
+                                    if((data.getTime() - t)>(300*1000)) {
                                         listaConectores.remove(con);
                                         Log.log(this, "Removendo "+con.getNome(), "DEBUG_N5");
                                         break;
@@ -95,10 +100,12 @@ public class ServidorRest implements HttpHandler {
         os.write(bs);
         os.flush();
         os.close();
+        Log.log(this,"Enviando code "+code,"INFO");
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        Log.log(this,"Requisicao exchange:"+exchange.toString(),"INFO");
         BufferedReader br = null;
 		String inputRequest = null;
 		StringBuilder requestContent = new StringBuilder();
@@ -123,19 +130,32 @@ public class ServidorRest implements HttpHandler {
             }
             else if(uri.getPath().equals("/ServidorIOT/plugon")){
                 boolean bConfigure = true;
+                boolean bErro = false;
+                Conector conRetirar = null;
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                 Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
-                Log.log(this,"plugon origem:" + plug.getIp(),"INFO");
+                Log.log(this,"plugon origem:" + plug.getIp()+" "+plug.getNome()+" "+plug.getId(),"INFO");
                 UUID uniqueKey = UUID.randomUUID();
                 String id = uniqueKey.toString();
                 for(Conector con :listaConectores){
                     if(con.getId().equals(plug.getId())){
+                        plug.setReqRet("plug");  
+                        Date date = new Date();
+                        plug.setTimeStampAlive(String.valueOf(date.getTime()));
                         bConfigure = false;
                         break;
                     }
+                    /*else if(con.getNome().equals(plug.getNome())) {
+                        bErro = true;
+                        bConfigure = false;
+                        conRetirar = con;
+                        break;
+                    }*/
+                     
                 }
                 if(bConfigure){
-                    Conector conRetirar = null;
+                    conRetirar = null;
+                    Log.log(this,"Configurando conector na lista.","INFO");
                     for(Conector con :listaConectores){
                         if(con.getNome().equals(plug.getNome())){
                             conRetirar = con;
@@ -155,16 +175,42 @@ public class ServidorRest implements HttpHandler {
                     }
                         
                     plug.setId(id);
-                    listaConectores.add(plug);                    
+                    listaConectores.add(plug);  
+                    exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                    send(200,gson.toJson(plug),exchange);                  
                 }
-                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-                send(200,gson.toJson(plug),exchange);
+                else if(uri.getPath().equals("/ServidorIOT/comando")){
+                    Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                    Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
+    
+                    for(Conector con :listaConectores){
+                        if(con.getNome().equals(plug.getNome())){
+                            Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
+                            List<ButtonIot> listaBiot = gson.fromJson(conector.getIot().getjSon(),listType);
+                            for (ButtonIot buttonIot : listaBiot) {
+                               
+                            }
+                        }
+                    }
+    
+                }
+                else if(bErro) {
+                    plug.setErro("Já existe um conector com este nome na lista.");
+                    Log.log(this,"Já existe um conector com este nome na lista.","INFO");
+                    listaConectores.remove(conRetirar);
+                    exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                    send(500,gson.toJson(plug),exchange);
+                }
+                else {
+                    exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                    send(200,gson.toJson(plug),exchange);
+                }
             }
             else if(uri.getPath().equals("/ServidorIOT/listarIOTs")){
                 Log.log(this,"listarIOTs","INFO");
-                List<String> iots = new ArrayList<>();
+                List<Conector> iots = new ArrayList<>();
                 for(Conector con :listaConectores){
-                    iots.add(con.getNome());
+                    iots.add(con);
                 }
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                 exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");

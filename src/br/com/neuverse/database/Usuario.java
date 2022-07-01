@@ -12,8 +12,8 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 	
 	public Usuario() throws SQLException{
 		super();
-		Statement statement = connection.createStatement();
-		statement.execute("CREATE TABLE IF NOT EXISTS USUARIO ( ID  INTEGER PRIMARY KEY AUTOINCREMENT, USUARIO VARCHAR, SENHA VARCHAR,NOME VARCHAR )");
+		//Statement statement = connection.createStatement();
+		//statement.execute("CREATE TABLE IF NOT EXISTS USUARIO ( ID  INTEGER PRIMARY KEY AUTOINCREMENT, USUARIO VARCHAR, SENHA VARCHAR,NOME VARCHAR )");
 
 	}
 	

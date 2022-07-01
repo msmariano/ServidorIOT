@@ -74,85 +74,56 @@ public class Cliente implements Runnable {
 
 	public void processar(Conector con) throws IOException, SQLException{
 		switch(con.getStatus()) {
-			case LISTA_IOT:
-			break;
-			case ACIONARBOTAO:
-				break;
-			case ALEATORIOINFO:
-				break;
-			case ALEATORIOOFF:
-				break;
-			case ALEATORIOON:
-				break;
-			case NOTIFICACAO:
-				break;
 			case ALIVE:
-				if(isLogado)
-					processarAlive(con);
-				else
-					socketCliente.close();
-				break;
-			case CONECTADO:
-				break;
-			case CONFIG:
+				processarAlive(con);
 				break;
 			case CONTROLLERCOMMAND:
-				break;
-			case ERRO:
-				break;
-			case FAIL:
-				break;
-			case GETVALUE:
-				break;
-			case HIGH:
-				break;
-			case HOLD:
-				break;
-			case IN:
-				break;
-			case INFO_SERVIDOR:
-				break;
-			case INTERRUPTOR:
-				break;
-			case JSON:
+				processarControllerCommand(con);
 				break;
 			case LOGIN:
 				processarLogin(con);
-				if(!isLogado)
-					socketCliente.close();
 				break;
 			case LOGINWITHCOMMAND:
 				processarLoginWithCommand(con);
 				break;
-			case LOGIN_FAIL:
-				break;
-			case LOGIN_OK:
-				break;
-			case LOW:
-				break;
-			case NA:
-				break;
-			case OFF:
-				break;
-			case ON:
-				break;
-			case OUT:
-				break;
-			case PUSH:
-				break;
-			case READ:
-				break;
-			case RETORNO:
-				break;
-			case RETORNOTRANSITORIO:
-				break;
-			case SUCESSO:
-				break;
-			case VOID:
-				break;
 			default:
 				break;			
 		}
+	}
+	
+	public void processarControllerCommand(Conector conector) {
+		if(!isLogado){
+			try {
+				socketCliente.close();
+				return ;
+			} catch (IOException e) {
+			}
+		}
+		for (Conector con : listaConectores) {
+			if (conector.getId().equals(con.getId())) {
+				List<ButtonIot> listaBiot = gerarBtns(con.getIot().getjSon());								
+				for(ButtonIot biot : listaBiot){
+					switch (con.getIot().getTipoIOT()) {
+						case RASPBERRYGPIO:							
+								for(ButtonGpioRaspPi bgrp : listaGpioButtons){	
+									if(biot.getButtonID() == bgrp.getId()){
+										if(biot.getStatus() == Status.ON) {
+											bgrp.ligar();									}
+									}
+									else {
+										bgrp.desligar();
+									}						
+								}													
+							break;
+						case CONTROLEREMOTO:
+							break;
+						default:
+							break;
+					}
+				}	
+				break;
+			}			
+		}		
 	}
 
 	public boolean validarLogin(Conector con){
@@ -167,8 +138,13 @@ public class Cliente implements Runnable {
 	}
 
 	public void processarLoginWithCommand(Conector conector){
-		for (Conector con : listaConectores) {
+		try {
+			processarLogin(conector);
+		} catch (SQLException e) {
 		}
+		if(isLogado) {	
+			processarControllerCommand(conector);		
+		}		
 	}
 
 	public void processarAlive(Conector conector){
@@ -207,14 +183,22 @@ public class Cliente implements Runnable {
 			uniqueKey = UUID.randomUUID();
 			conector.setId(uniqueKey.toString());
 			id = uniqueKey.toString();
-			Log.grava("Inserindo["+conector.getNome()+"] id: "+conector.getId());
+			Log.log(this,"Inserindo["+conector.getNome()+"] id: "+conector.getId(),"INFO");
 			isLogado = true;
+			if(conector.getTipo()!=null&&conector.getTipo().equals(TipoIOT.HUMAN)) {
+				conector.setConectores(listaConectores);
+			}
 		}
 		else {
 			conector.setStatus(Status.LOGIN_FAIL);
 		}		
 		String jSon = gson.toJson(conector);
 		enviar(jSon + "\r\n");
+		if(!isLogado)
+			try {
+				socketCliente.close();
+			} catch (IOException e) {
+			}
 		return isLogado;
 	}
 
@@ -306,6 +290,13 @@ public class Cliente implements Runnable {
 
 	public void setClientes(List<Cliente> clientes) {
 		this.clientes = clientes;
+	}
+
+	public List<ButtonIot> gerarBtns(String jSon) {
+		Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+		Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
+		List<ButtonIot> listaBiot = gson.fromJson(jSon, listType );
+		return listaBiot;
 	}
 
 }

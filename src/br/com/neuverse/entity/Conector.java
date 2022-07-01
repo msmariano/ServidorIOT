@@ -23,10 +23,17 @@ public class Conector {
 	private String mac;
 	private String reqRet;
 	private String timeStampAlive;
+	private List<Conector> conectores;
 	
 
 	public String getId() {
 		return id;
+	}
+	public List<Conector> getConectores() {
+		return conectores;
+	}
+	public void setConectores(List<Conector> conectores) {
+		this.conectores = conectores;
 	}
 	public String getTimeStampAlive() {
 		return timeStampAlive;

@@ -1,21 +1,31 @@
 package br.com.neuverse.principal;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import br.com.neuverse.database.Configuracao;
 import br.com.neuverse.database.Usuario;
 import br.com.neuverse.entity.ButtonGpioRaspPi;
+import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Conector;
 import br.com.neuverse.entity.InfoServidor;
 import br.com.neuverse.entity.Iot;
 import br.com.neuverse.entity.ServidorRest;
 import br.com.neuverse.entity.Versao;
+import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 
 public class Main {
@@ -28,6 +38,7 @@ public class Main {
 	private String nomeServidorDefault = "ServidorNeuverse";
 	private String nomeDeviceDefault = "ServidorNeuverseIOT";
 	private InfoServidor infoServidor = new InfoServidor();
+	private Conector conector;
 
 	public static void main(String[] args) throws IOException, SQLException {
 
@@ -37,21 +48,54 @@ public class Main {
 		mainServidor.carregarConfiguracoes();
 		mainServidor.inicializar();		
 		mainServidor.criarConectorServidor();
+		mainServidor.carregaGpioButtons();
 		mainServidor.processar();	
+		//BigInteger n = new BigInteger("20");
+		
 		
 	}
 
 	public void carregaGpioButtons(){
+		try{
+			Configuracao cfg = new Configuracao();
+			List<Integer[][]> listaBtnGpio = cfg.retornaBtnGpio();
+			List<ButtonIot> buttons = new ArrayList<>();
+			for(Integer[][] btnGpio : listaBtnGpio) {
+				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio[0][0],btnGpio[0][1],btnGpio[0][2]);
+				bgrpi.setId(btnGpio[0][3]);
+				listaGpioButtons.add(bgrpi);
+				ButtonIot bIot = new ButtonIot();
+				bIot.setButtonID(btnGpio[0][3]);				
+				bIot.setFuncao(Status.getEnum(btnGpio[0][4]));
+				bIot.setTecla(Status.getEnum(btnGpio[0][5]));
+				bIot.setStatus(Status.getEnum(btnGpio[0][6]));
+				bIot.setNomeGpio("CtrlGpioServidor");
+				buttons.add(bIot);
+			}
+			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+			String jSon = gson.toJson(buttons);
+			conector.getIot().setjSon(jSon);
 
+		}
+		catch(Exception e) {
+
+		}
 	}
 
 	public void criarConectorServidor(){
-		Conector conector = new Conector();
-		conector.setId("");
+		conector = new Conector();
 		conector.setNome(nomeServidorDefault);
+		UUID uniqueKey = UUID.randomUUID();
+        String id = uniqueKey.toString();
+		conector.setId(id);
 		conector.setTipo(TipoIOT.SERVIDOR);
+		try {			
+			conector.setIp(InetAddress.getLocalHost().getHostName());
+		} catch (UnknownHostException e) {
+			
+		}
 		Iot iot = new Iot();
-		iot.setTipoIOT(TipoIOT.SERVIDOR);
+		iot.setTipoIOT(TipoIOT.RASPBERRYGPIO);
 		iot.setName(nomeDeviceDefault);
 		conector.setIot(iot);
 		listaConectores.add(conector);
