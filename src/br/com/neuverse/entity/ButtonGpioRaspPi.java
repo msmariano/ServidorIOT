@@ -12,14 +12,14 @@ import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.principal.Log;
 
-public class ButtonGpioRaspPi {
+public class ButtonGpioRaspPi extends Device{
     private Integer id;
     private Integer tipo;
     private final GpioController gpio;
     private final GpioPinDigitalOutput interruptor;
     private final GpioPinDigitalInput comando;
 
-    public ButtonGpioRaspPi(Integer gpioInterruptor,Integer gpioComando,Integer p){
+    public ButtonGpioRaspPi(Integer gpioInterruptor,Integer gpioComando,Integer p) {
         Log.log(this,"I:"+gpioInterruptor+" C:"+gpioComando,"INFO");
         gpio = GpioFactory.getInstance();
         tipo = p;
@@ -79,13 +79,27 @@ public class ButtonGpioRaspPi {
     }
 
     public void setId(Integer id) {
+        super.setId(id);
         this.id = id;
     }
-
+   
     public void ligar(){
         interruptor.high();
     }
+   
     public void desligar(){
         interruptor.low();
+    }
+
+    @Override
+    boolean on() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    boolean off() {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

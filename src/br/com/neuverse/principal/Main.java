@@ -25,6 +25,7 @@ import br.com.neuverse.entity.InfoServidor;
 import br.com.neuverse.entity.Iot;
 import br.com.neuverse.entity.ServidorRest;
 import br.com.neuverse.entity.Versao;
+import br.com.neuverse.entity.Device;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 
@@ -33,6 +34,7 @@ public class Main {
 	private static ServerSocket servidor;
 	private List<Conector> listaConectores = new ArrayList<>();
 	private List<ButtonGpioRaspPi> listaGpioButtons = new ArrayList<>(); 
+	private List<Device> devices = new ArrayList<>();
 	private List<Cliente> clientes = new ArrayList<>();
 	private Integer serverPortDefault = 27015;
 	private String nomeServidorDefault = "ServidorNeuverse";
@@ -64,6 +66,7 @@ public class Main {
 				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio[0][0],btnGpio[0][1],btnGpio[0][2]);
 				bgrpi.setId(btnGpio[0][3]);
 				listaGpioButtons.add(bgrpi);
+				devices.add(bgrpi);
 				ButtonIot bIot = new ButtonIot();
 				bIot.setButtonID(btnGpio[0][3]);				
 				bIot.setFuncao(Status.getEnum(btnGpio[0][4]));
@@ -75,6 +78,7 @@ public class Main {
 			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 			String jSon = gson.toJson(buttons);
 			conector.getIot().setjSon(jSon);
+			conector.setDevices(devices);
 
 		}
 		catch(Exception e) {

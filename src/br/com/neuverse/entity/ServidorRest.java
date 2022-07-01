@@ -19,6 +19,8 @@ import com.google.gson.reflect.TypeToken;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.principal.Log;
 
 
@@ -179,21 +181,7 @@ public class ServidorRest implements HttpHandler {
                     exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                     send(200,gson.toJson(plug),exchange);                  
                 }
-                else if(uri.getPath().equals("/ServidorIOT/comando")){
-                    Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-                    Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
-    
-                    for(Conector con :listaConectores){
-                        if(con.getNome().equals(plug.getNome())){
-                            Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
-                            List<ButtonIot> listaBiot = gson.fromJson(conector.getIot().getjSon(),listType);
-                            for (ButtonIot buttonIot : listaBiot) {
-                               
-                            }
-                        }
-                    }
-    
-                }
+                
                 else if(bErro) {
                     plug.setErro("Já existe um conector com este nome na lista.");
                     Log.log(this,"Já existe um conector com este nome na lista.","INFO");
@@ -205,6 +193,31 @@ public class ServidorRest implements HttpHandler {
                     exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                     send(200,gson.toJson(plug),exchange);
                 }
+            }
+            else if(uri.getPath().equals("/ServidorIOT/comando")){
+                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
+
+                for(Conector con :listaConectores){
+                    if(con.getNome().equals(plug.getNome())){
+                        Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
+                        List<ButtonIot> listaBiot = gson.fromJson(con.getIot().getjSon(),listType);
+                        for (ButtonIot buttonIot : listaBiot) {
+                            for(Device device : con.getDevices()) {
+                                if(device.getId().equals(buttonIot.getButtonID())){
+                                    if(buttonIot.getStatus().equals(Status.ON)){
+                                        device.on();
+                                    } 
+                                    else if(buttonIot.getStatus().equals(Status.OFF)){
+                                        device.off();
+                                    } 
+                                }
+                            }
+
+                        }
+                    }
+                }
+
             }
             else if(uri.getPath().equals("/ServidorIOT/listarIOTs")){
                 Log.log(this,"listarIOTs","INFO");
