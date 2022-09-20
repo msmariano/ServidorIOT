@@ -1,8 +1,6 @@
 package br.com.neuverse.principal;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -23,6 +21,7 @@ import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Conector;
 import br.com.neuverse.entity.InfoServidor;
 import br.com.neuverse.entity.Iot;
+import br.com.neuverse.entity.Parametro;
 import br.com.neuverse.entity.ServidorRest;
 import br.com.neuverse.entity.Versao;
 import br.com.neuverse.entity.Device;
@@ -41,12 +40,13 @@ public class Main {
 	private String nomeDeviceDefault = "ServidorNeuverseIOT";
 	private InfoServidor infoServidor = new InfoServidor();
 	private Conector conector;
+	private Versao ver = new Versao();
 
 	public static void main(String[] args) throws IOException, SQLException {
 
 		Main mainServidor = new Main();		
 		Log.log(mainServidor,"Bem vindo ao Servidor IOT!","INFO");	
-		Log.log(mainServidor,Versao.ver(),"INFO");
+		Log.log(mainServidor,mainServidor.ver.ver(),"INFO");
 		mainServidor.carregarConfiguracoes();
 		mainServidor.inicializar();		
 		mainServidor.criarConectorServidor();
@@ -60,20 +60,22 @@ public class Main {
 	public void carregaGpioButtons(){
 		try{
 			Configuracao cfg = new Configuracao();
-			List<Integer[][]> listaBtnGpio = cfg.retornaBtnGpio();
+			List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
 			List<ButtonIot> buttons = new ArrayList<>();
-			for(Integer[][] btnGpio : listaBtnGpio) {
-				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio[0][0],btnGpio[0][1],btnGpio[0][2]);
-				bgrpi.setId(btnGpio[0][3]);
+			for(Parametro btnGpio : listaBtnGpio) {
+				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio.getC1(),btnGpio.getC2(),btnGpio.getC3(),btnGpio.getC4());
 				listaGpioButtons.add(bgrpi);
 				devices.add(bgrpi);
 				ButtonIot bIot = new ButtonIot();
-				bIot.setButtonID(btnGpio[0][3]);				
-				bIot.setFuncao(Status.getEnum(btnGpio[0][4]));
-				bIot.setTecla(Status.getEnum(btnGpio[0][5]));
-				bIot.setStatus(Status.getEnum(btnGpio[0][6]));
+				bIot.setButtonID(btnGpio.getC4());				
+				bIot.setFuncao(Status.getEnum(btnGpio.getC5()));
+				bIot.setTecla(Status.getEnum(btnGpio.getC6()));
+				bIot.setStatus(bgrpi.getStatus());
 				bIot.setNomeGpio("CtrlGpioServidor");
+				bIot.setNick(btnGpio.getC8());
+				bgrpi.toDo(bIot);
 				buttons.add(bIot);
+				conector.getButtons().add(bIot);
 			}
 			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 			String jSon = gson.toJson(buttons);
@@ -91,7 +93,7 @@ public class Main {
 		conector.setNome(nomeServidorDefault);
 		UUID uniqueKey = UUID.randomUUID();
         String id = uniqueKey.toString();
-		conector.setId(id);
+		conector.setIdConector(id);
 		conector.setTipo(TipoIOT.SERVIDOR);
 		try {			
 			conector.setIp(InetAddress.getLocalHost().getHostName());
@@ -107,7 +109,8 @@ public class Main {
 	public void inicializar() throws IOException {
 		ServidorRest servidorRest = new ServidorRest();
 		infoServidor = new InfoServidor();
-		infoServidor.setVersao(Versao.ver());
+		infoServidor.setVersao(ver.ver());
+		infoServidor.setUpTime(ver.getUpDate());
 		infoServidor.setNomeServidor(nomeServidorDefault);
 		infoServidor.setNomeComputador(InetAddress.getLocalHost().getHostName());
 		infoServidor.setIp(InetAddress.getLocalHost().getHostAddress());

@@ -1,9 +1,15 @@
 package br.com.neuverse.entity;
 
+import com.google.gson.annotations.Expose;
+
 public class IotServidor {
+    @Expose(serialize = true)
     private String endIp;
+    @Expose(serialize = true)
     private String porta;
+    @Expose(serialize = true)
     private String jSon;
+    @Expose(serialize = true)
     private Integer id;
 
     public String getEndIp() {

@@ -22,6 +22,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.principal.Log;
+import br.com.neuverse.principal.Main;
 
 
 
@@ -29,7 +30,7 @@ public class ServidorRest implements HttpHandler {
     private HttpServer httpServer;
     private List<Conector> listaConectores;
     private InfoServidor infoServidor;
-
+  
     
     public ServidorRest(){
         try {
@@ -136,11 +137,11 @@ public class ServidorRest implements HttpHandler {
                 Conector conRetirar = null;
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                 Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
-                Log.log(this,"plugon origem:" + plug.getIp()+" "+plug.getNome()+" "+plug.getId(),"INFO");
+                Log.log(this,"plugon origem:" + plug.getIp()+" "+plug.getNome()+" "+plug.getIdConector(),"INFO");
                 UUID uniqueKey = UUID.randomUUID();
                 String id = uniqueKey.toString();
                 for(Conector con :listaConectores){
-                    if(con.getId().equals(plug.getId())){
+                    if(con.getIdConector().equals(plug.getIdConector())){
                         plug.setReqRet("plug");  
                         Date date = new Date();
                         plug.setTimeStampAlive(String.valueOf(date.getTime()));
@@ -176,7 +177,7 @@ public class ServidorRest implements HttpHandler {
                         plug.setTimeStampAlive(String.valueOf(date.getTime()));
                     }
                         
-                    plug.setId(id);
+                    plug.setIdConector(id);
                     listaConectores.add(plug);  
                     exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                     send(200,gson.toJson(plug),exchange);                  
@@ -195,39 +196,61 @@ public class ServidorRest implements HttpHandler {
                 }
             }
             else if(uri.getPath().equals("/ServidorIOT/comando")){
-                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-                Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
-
-                for(Conector con :listaConectores){
-                    if(con.getNome().equals(plug.getNome())){
-                        Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
-                        List<ButtonIot> listaBiot = gson.fromJson(con.getIot().getjSon(),listType);
-                        for (ButtonIot buttonIot : listaBiot) {
-                            for(Device device : con.getDevices()) {
-                                if(device.getId().equals(buttonIot.getButtonID())){
-                                    if(buttonIot.getStatus().equals(Status.ON)){
-                                        device.on();
-                                    } 
-                                    else if(buttonIot.getStatus().equals(Status.OFF)){
-                                        device.off();
-                                    } 
+                try{
+                    Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                    Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
+               
+                    for(Conector con :listaConectores){
+                        if(con.getNome().equals(plug.getNome())){
+                            Log.log(this,"comando encontrou "+plug.getNome(),"INFO");
+                            Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
+                            List<ButtonIot> listaBiot = gson.fromJson(plug.getIot().getjSon(),listType);
+                            for (ButtonIot buttonIot : listaBiot) {
+                                for(Device device : con.getDevices()) {
+                                    if(device.getId().equals(buttonIot.getButtonID())){
+                                        if(buttonIot.getStatus().equals(Status.ON)){
+                                            device.on();
+                                        } 
+                                        else if(buttonIot.getStatus().equals(Status.OFF)){
+                                            device.off();
+                                        } 
+                                    }
                                 }
-                            }
 
+                            }
                         }
                     }
-                }
+                    send(200,"Ok!",exchange);
+                }catch(Exception e){
+                    send(200,e.getMessage(),exchange);
+                }            
 
             }
             else if(uri.getPath().equals("/ServidorIOT/listarIOTs")){
                 Log.log(this,"listarIOTs","INFO");
-                List<Conector> iots = new ArrayList<>();
-                for(Conector con :listaConectores){
-                    iots.add(con);
+                //List<String> iots = new ArrayList<>();
+                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").excludeFieldsWithoutExposeAnnotation().create();
+                try{
+                    /*for(Conector con :listaConectores){
+
+                        for(ButtonIot bIot : con.getButtons()){
+                            for(Device device: con.getDevices()){
+                                if(device.getId().equals(bIot.getButtonID())){
+                                    bIot.setStatus(device.getStatus());
+                                }
+                            }
+                        }
+                        String jSon = gson.toJson(con.getButtons());
+                        con.getIot().setjSon(jSon);
+                        iots.add(con.getIot().getjSon());
+                    }*/
+                    
+                    exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                    send(200,gson.toJson(listaConectores),exchange);
                 }
-                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-                send(200,gson.toJson(iots),exchange);
+                catch (Exception e) {
+                    send(500,e.getMessage(),exchange);
+                }
             }
             else{
                 send(404,"",exchange);
@@ -238,4 +261,21 @@ public class ServidorRest implements HttpHandler {
         }
     }   
     
+
+    /**
+     * @return HttpServer return the httpServer
+     */
+    public HttpServer getHttpServer() {
+        return httpServer;
+    }
+
+    /**
+     * @param httpServer the httpServer to set
+     */
+    public void setHttpServer(HttpServer httpServer) {
+        this.httpServer = httpServer;
+    }
+
+
+
 }

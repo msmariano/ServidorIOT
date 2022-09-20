@@ -100,7 +100,7 @@ public class Cliente implements Runnable {
 			}
 		}
 		for (Conector con : listaConectores) {
-			if (conector.getId().equals(con.getId())) {
+			if (conector.getIdConector().equals(con.getIdConector())) {
 				List<ButtonIot> listaBiot = gerarBtns(con.getIot().getjSon());								
 				for(ButtonIot biot : listaBiot){
 					switch (con.getIot().getTipoIOT()) {
@@ -179,11 +179,11 @@ public class Cliente implements Runnable {
 			}
 			conector.setIots(iots);
 			UUID uniqueKey = UUID.randomUUID();
-			conector.setId(uniqueKey.toString());
+			conector.setIdConector(uniqueKey.toString());
 			uniqueKey = UUID.randomUUID();
-			conector.setId(uniqueKey.toString());
+			conector.setIdConector(uniqueKey.toString());
 			id = uniqueKey.toString();
-			Log.log(this,"Inserindo["+conector.getNome()+"] id: "+conector.getId(),"INFO");
+			Log.log(this,"Inserindo["+conector.getNome()+"] id: "+conector.getIdConector(),"INFO");
 			isLogado = true;
 			if(conector.getTipo()!=null&&conector.getTipo().equals(TipoIOT.HUMAN)) {
 				conector.setConectores(listaConectores);
@@ -239,7 +239,7 @@ public class Cliente implements Runnable {
 		else
 		Log.log(this,"Cliente desconectando!","INFO");
 		for (Conector con : listaConectores) {
-			if (con.getId().equals(getId()) && !con.getTipo().equals(TipoIOT.SERVIDOR)) {
+			if (con.getIdConector().equals(getId()) && !con.getTipo().equals(TipoIOT.SERVIDOR)) {
 				Log.log(this,"Removendo conector:"+con.getNome(),"INFO");
 				listaConectores.remove(con);
 				break;

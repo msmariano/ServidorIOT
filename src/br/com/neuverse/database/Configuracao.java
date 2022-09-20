@@ -6,6 +6,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.neuverse.entity.Parametro;
+import br.com.neuverse.principal.Log;
+
+
 public class Configuracao extends Conexao implements Dao<Configuracao>{
 	
 	
@@ -16,27 +20,30 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 
 	}
 
-	public List<Integer[][]> retornaBtnGpio() {
+	public List<Parametro> retornaBtnGpio() {
 
-		List<Integer[][]> listaBtnGpio = new ArrayList<>();
+		List<Parametro> parametros = new ArrayList<>();
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet rs = statement.executeQuery("SELECT C1,C2,C3,C4,C5,C6,C7 FROM CONFIGURACAO where parametro = 'btnGpio'");
+			ResultSet rs = statement.executeQuery("SELECT C1,C2,C3,C4,C5,C6,C7,C8 FROM CONFIGURACAO where parametro = 'btnGpio'");
 			while(rs.next()) {
-				Integer[][] btnGpio = new Integer[1][7];
-				btnGpio[0][0] = rs.getInt("C1");
-				btnGpio[0][1] = rs.getInt("C2");
-				btnGpio[0][2] = rs.getInt("C3");
-				btnGpio[0][3] = rs.getInt("C4");
-				btnGpio[0][4] = rs.getInt("C5");
-				btnGpio[0][5] = rs.getInt("C6");
-				btnGpio[0][6] = rs.getInt("C7");
-				listaBtnGpio.add(btnGpio);
+
+				Parametro parametro = new Parametro();
+				parametro.setC1(rs.getInt("C1"));
+				parametro.setC2(rs.getInt("C2"));
+				parametro.setC3(rs.getInt("C3"));
+				parametro.setC4(rs.getInt("C4"));
+				parametro.setC5(rs.getInt("C5"));
+				parametro.setC6(rs.getInt("C6"));
+				parametro.setC7(rs.getInt("C7"));
+				parametro.setC8(rs.getString("C8"));
+				parametros.add(parametro);
 			}
 			
-		} catch (SQLException e) {		
+		} catch (SQLException e) {
+			Log.log(this,e.getMessage(),"ERROR");		
 		}		
-		return listaBtnGpio;
+		return parametros;
 	}
 	
 	public Integer retornaPortaServidor() {
