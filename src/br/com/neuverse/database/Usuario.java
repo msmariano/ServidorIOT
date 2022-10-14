@@ -28,7 +28,25 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 	private String usuario;
 	private String senha;
 	private String nome;
+	private String token;
+	private Boolean isLogado;
 	
+	public Boolean getIsLogado() {
+		return isLogado;
+	}
+
+	public void setIsLogado(Boolean logado) {
+		this.isLogado = logado;
+	}
+
+	public String getToken() {
+		return token;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
+	}
+
 	private Integer id;
 	
 	public Integer getId() {
@@ -57,6 +75,7 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 
 	public Boolean retornaUsuario(String user,String passwd){
 		try {
+			isLogado = false;
 			Statement statement = connection.createStatement();
 			String sql = "select * from usuario where usuario = '"+user+"' and senha = '"+passwd+"'";
 			ResultSet rs = statement.executeQuery(sql);
@@ -66,6 +85,7 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 				this.setNome(rs.getString("nome"));
 				this.setSenha(passwd);
 				this.setUsuario(user);
+				isLogado = true;
 				return true;
 			}
 		} catch (SQLException e) {
@@ -99,22 +119,27 @@ public class Usuario extends Conexao implements Dao<Usuario>{
 		
 	}
 	
-	public void obterPorUsuarioSenha() {
+	public Boolean obterPorUsuarioSenha() {
 		
 		PreparedStatement stmt;
+		isLogado = false;
 		
 		try {
-			stmt = connection.prepareStatement("select ID from USUARIO WHERE USUARIO = ? AND SENHA = ?");
+			stmt = connection.prepareStatement("select ID,nome from USUARIO WHERE USUARIO = ? AND SENHA = ?");
 			stmt.setString(1,usuario);
 			stmt.setString(2,senha);
 			ResultSet resultSet = stmt.executeQuery();
 			if (resultSet.next()) {
 				
 				id = resultSet.getInt(1);
+				nome =  resultSet.getString(2);
+				isLogado = true;
+				return true;
 			}
 		}
 		catch (Exception e) {
 		}
+		return false;
 		
 	}
 

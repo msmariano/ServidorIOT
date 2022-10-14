@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch SimpleHTTPSServer",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.SimpleHTTPSServer",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
+            "name": "Launch SimpleHTTPSServer",
+            "request": "launch",
+            "mainClass": "br.com.SimpleHTTPSServer",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "Launch ConfiguraIOT",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.ConfiguraIOT",
@@ -58,7 +72,7 @@
             "request": "attach",
             "mainClass": "br.com.neuverse.principal.Main",
             "projectName": "ServidorIOT",
-            "hostName": "192.168.10.254",
+            "hostName": "192.168.0.254",
             "port": 8000
         },
         {

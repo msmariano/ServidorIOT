@@ -22,6 +22,7 @@ public class ButtonGpioRaspPi extends Device{
     private Object toDoObject;
 
     public ButtonGpioRaspPi(Integer gpioInterruptor,Integer gpioComando,Integer p,Integer idVariavel) {
+
         Log.log(this,"ID:"+idVariavel+" I:"+gpioInterruptor+" C:"+gpioComando,"INFO");
         setId(idVariavel);
         idR = idVariavel;
@@ -50,6 +51,17 @@ public class ButtonGpioRaspPi extends Device{
                     else
                         desligar();
                 }
+                try {
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            atualizar();
+                        }
+                    }.start();
+                }
+                catch(Exception e){
+                    Log.log(this,"atualizar() listener"+e.getMessage(),"DEBUG");       
+                }
                 
             }
         });
@@ -57,11 +69,22 @@ public class ButtonGpioRaspPi extends Device{
             @Override
             public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
                 ButtonIot bIot = (ButtonIot) toDoObject;  
-                if(event.getState().equals(PinState.HIGH)){
+                if(event.getState().equals(PinState.HIGH))
                     bIot.setStatus(Status.ON);
-                }
                 else
                     bIot.setStatus(Status.OFF);  
+                try {
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            atualizar();
+                        }
+                    }.start();
+                }
+                catch(Exception e){
+                    Log.log(this,"atualizar() listener"+e.getMessage(),"DEBUG");       
+                }
+                
             }
         });
 

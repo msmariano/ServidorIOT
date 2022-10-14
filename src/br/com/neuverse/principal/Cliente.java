@@ -1,19 +1,15 @@
 package br.com.neuverse.principal;
 
-import java.awt.Button;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-//import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-//import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,12 +22,7 @@ import com.google.gson.reflect.TypeToken;
 import br.com.neuverse.database.Usuario;
 import br.com.neuverse.entity.ButtonGpioRaspPi;
 import br.com.neuverse.entity.ButtonIot;
-import br.com.neuverse.entity.ComandoIOT;
-//import java.lang.reflect.Type;
-//import com.google.gson.reflect.TypeToken;
-//import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Conector;
-import br.com.neuverse.entity.InfoServidor;
 import br.com.neuverse.entity.Mensagem;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
@@ -47,6 +38,23 @@ public class Cliente implements Runnable {
 	private String nomeIotCliente;
 	private String ipCliente;
 	private Boolean isLogado = false;
+	public Boolean getIsLogado() {
+		return isLogado;
+	}
+
+	public void setIsLogado(Boolean isLogado) {
+		this.isLogado = isLogado;
+	}
+
+	private String nickName;
+
+	public String getNickName() {
+		return nickName;
+	}
+
+	public void setNickName(String nickName) {
+		this.nickName = nickName;
+	}
 
 	public String getNomeIotCliente() {
 		return nomeIotCliente;
@@ -170,9 +178,10 @@ public class Cliente implements Runnable {
 		Usuario usuario = new Usuario();
 		usuario.setSenha(conector.getSenha());
 		usuario.setUsuario(conector.getUsuario());
-		usuario.obterPorUsuarioSenha();
-		if(usuario.getId()!=null) {
+		isLogado = usuario.obterPorUsuarioSenha();
+		if(isLogado) {
 			conector.setStatus(Status.LOGIN_OK);
+			this.nickName = conector.getNome();
 			List<String> iots = new ArrayList<String>();
 			for (Conector con : listaConectores) {
 				iots.add(con.getIot().getName());
@@ -183,11 +192,11 @@ public class Cliente implements Runnable {
 			uniqueKey = UUID.randomUUID();
 			conector.setIdConector(uniqueKey.toString());
 			id = uniqueKey.toString();
-			Log.log(this,"Inserindo["+conector.getNome()+"] id: "+conector.getIdConector(),"INFO");
-			isLogado = true;
+			Log.log(this,"Inserindo "+nickName,"DEBUG");
 			if(conector.getTipo()!=null&&conector.getTipo().equals(TipoIOT.HUMAN)) {
 				conector.setConectores(listaConectores);
 			}
+			Log.log(this,"Cliente:"+nickName+" logado","DEBUG");
 		}
 		else {
 			conector.setStatus(Status.LOGIN_FAIL);
@@ -199,6 +208,7 @@ public class Cliente implements Runnable {
 				socketCliente.close();
 			} catch (IOException e) {
 			}
+		
 		return isLogado;
 	}
 
@@ -209,7 +219,7 @@ public class Cliente implements Runnable {
 			while (true) {
 				String mens = entrada.readLine();
 				if (mens == null){
-					Log.log(this,"Mensagem vazia","INFO");
+					Log.log(this,"Mensagem vazia de "+nickName,"DEBUG");
 					break;
 				}
 				Log.grava(mens);
@@ -222,7 +232,7 @@ public class Cliente implements Runnable {
 							break;
 					}
 				} catch (Exception e) {
-					Log.log(this,"mensagem inválida:"+e.getMessage(),"ERROR");
+					Log.log(this,"mensagem invalida:"+e.getMessage(),"DEBUG");
 					socketCliente.close();
 					break;
 				}
@@ -235,9 +245,9 @@ public class Cliente implements Runnable {
 			}
 		}		
 		if(this.getId()!=null)
-			Log.log(this,"Cliente desconectando:"+this.getId(),"INFO");
+			Log.log(this,"Cliente "+nickName+" desconectando:"+this.getId(),"DEBUG");
 		else
-		Log.log(this,"Cliente desconectando!","INFO");
+			Log.log(this,"Cliente desconectando!","DEBUG");
 		for (Conector con : listaConectores) {
 			if (con.getIdConector().equals(getId()) && !con.getTipo().equals(TipoIOT.SERVIDOR)) {
 				Log.log(this,"Removendo conector:"+con.getNome(),"INFO");
@@ -245,6 +255,7 @@ public class Cliente implements Runnable {
 				break;
 			}			
 		}
+		Log.log(this,"Cliente:"+nickName+" deslogado","DEBUG");
 		clientes.remove(this);
 	}
 
@@ -255,7 +266,22 @@ public class Cliente implements Runnable {
 			saida.write(mens);
 			saida.flush();
 		} catch (IOException e) {
-			Log.grava(e.getMessage());
+			Log.log(this, "enviar "+nickName+" "+e.getMessage(), "DEBUG");
+		}
+
+	}
+
+	public synchronized void enviarAtualizar() {
+		Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+        String jSon = gson.toJson(listaConectores);
+		
+		BufferedWriter saida;
+		try {
+			saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
+			saida.write(jSon+"\r\n");
+			saida.flush();
+		} catch (IOException e) {
+			Log.log(this, "enviar "+nickName+" "+e.getMessage(), "DEBUG");
 		}
 
 	}

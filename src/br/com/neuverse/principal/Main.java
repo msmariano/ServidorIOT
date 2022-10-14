@@ -52,9 +52,7 @@ public class Main {
 		mainServidor.criarConectorServidor();
 		mainServidor.carregaGpioButtons();
 		mainServidor.processar();	
-		//BigInteger n = new BigInteger("20");
-		
-		
+		//BigInteger n = new BigInteger("20");		
 	}
 
 	public void carregaGpioButtons(){
@@ -65,6 +63,8 @@ public class Main {
 			for(Parametro btnGpio : listaBtnGpio) {
 				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio.getC1(),btnGpio.getC2(),btnGpio.getC3(),btnGpio.getC4());
 				listaGpioButtons.add(bgrpi);
+				bgrpi.setConectores(listaConectores);
+				bgrpi.setClientes(clientes);
 				devices.add(bgrpi);
 				ButtonIot bIot = new ButtonIot();
 				bIot.setButtonID(btnGpio.getC4());				
@@ -107,7 +107,8 @@ public class Main {
 		listaConectores.add(conector);
 	}
 	public void inicializar() throws IOException {
-		ServidorRest servidorRest = new ServidorRest();
+		ServidorRest servidorRest = new ServidorRest(true,8080);
+		ServidorRest servidorRestNoSSL = new ServidorRest(false,8081);
 		infoServidor = new InfoServidor();
 		infoServidor.setVersao(ver.ver());
 		infoServidor.setUpTime(ver.getUpDate());
@@ -116,10 +117,13 @@ public class Main {
 		infoServidor.setIp(InetAddress.getLocalHost().getHostAddress());
 		infoServidor.setDataAtual(new Date());
 		servidorRest.setInfoServidor(infoServidor);
+		servidorRestNoSSL.setInfoServidor(infoServidor);
 		listaConectores = new ArrayList<>();
 		servidorRest.setListaConectores(listaConectores);
+		servidorRestNoSSL.setListaConectores(listaConectores);
 		servidor = new ServerSocket(serverPortDefault);
 		servidorRest.monitoraConectores(servidorRest);
+		servidorRestNoSSL.monitoraConectores(servidorRest);
 	}
 
 	@SuppressWarnings("unused") 
