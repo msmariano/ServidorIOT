@@ -33,11 +33,11 @@ public class Log {
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy HH:mm:ss");
 		
 
-		//if(tipo.equals("DEBUG"))
+		if(tipo.equals("DEBUG"))
 			System.out.println("["+tipo+"] "+sdf.format(new Date())+"["+classe+"]:"+mensLog);
 
 		
-		if(tipo.contains("SALVAR")){
+		/*if(tipo.contains("SALVAR")){
 			BufferedWriter bw;
 			try {
 				bw = new BufferedWriter(new FileWriter("log.txt",true));
@@ -47,6 +47,6 @@ public class Log {
 			} catch (Exception e) {
 			
 			}
-		}		
+		}*/		
 	}
 }

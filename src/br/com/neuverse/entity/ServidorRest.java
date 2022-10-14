@@ -1,17 +1,37 @@
 package br.com.neuverse.entity;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import javax.crypto.SecretKey;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManagerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -19,25 +39,139 @@ import com.google.gson.reflect.TypeToken;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+
+
+import br.com.neuverse.database.Usuario;
+import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.principal.Log;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+
 
 
 
 public class ServidorRest implements HttpHandler {
-    private HttpServer httpServer;
+    private HttpsServer httpServer;
+    private HttpServer servidorHttp;
     private List<Conector> listaConectores;
     private InfoServidor infoServidor;
 
+    private final SecretKey CHAVE = Keys.hmacShaKeyFor(
+		"7f-j&CKk=coNzZc0y7_4obMP?#TfcYq%fcD0mDpenW2nc!lfGoZ|d?f&RNbDHUX6"
+		.getBytes(StandardCharsets.UTF_8));
+  
     
     public ServidorRest(){
-        try {
-            httpServer = HttpServer.create(new InetSocketAddress(8080), 0);
+        /*try {
+            httpServer = HttpsServer.create(new InetSocketAddress(8080), 0);
+  
+            
+            /////////////////
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            // initialise the keystore
+            char[] password = "password".toCharArray();
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            FileInputStream fis = new FileInputStream("/home/pi/Desktop/servidoriothttps.jks");
+            ks.load(fis, password);
+
+            // setup the key manager factory
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(ks, password);
+
+            // setup the trust manager factory
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            tmf.init(ks);
+
+            // setup the HTTPS context and parameters
+            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            httpServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+                public void configure(HttpsParameters params) {
+                    try {
+                        // initialise the SSL context
+                        SSLContext context = getSSLContext();
+                        SSLEngine engine = context.createSSLEngine();
+                        params.setNeedClientAuth(false);
+                        params.setCipherSuites(engine.getEnabledCipherSuites());
+                        params.setProtocols(engine.getEnabledProtocols());
+
+                        // Set the SSL parameters
+                        SSLParameters sslParameters = context.getSupportedSSLParameters();
+                        params.setSSLParameters(sslParameters);
+
+                    } catch (Exception ex) {
+                        System.out.println("Failed to create HTTPS port");
+                    }
+                }
+            });
+
+
+   ///////////////////////
+
             httpServer.createContext("/ServidorIOT", this);
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
             httpServer.setExecutor(threadPoolExecutor);
             this.httpServer.start();
-        } catch (IOException e) {
-            
+        } catch (Exception e) {
+            Log.log(this,e.getMessage(),"DEBUG");
+        }*/
+    }
+    public ServidorRest(Boolean https,int porta){
+        if(https) {
+            try {                
+                httpServer = HttpsServer.create(new InetSocketAddress(porta), 0);
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                char[] password = "password".toCharArray();
+                KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+                FileInputStream fis = new FileInputStream("/home/pi/Desktop/servidoriothttps.jks");
+                ks.load(fis, password);
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+                kmf.init(ks, password);
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+                tmf.init(ks);
+                sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+                httpServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+                    public void configure(HttpsParameters params) {
+                        try {
+                            // initialise the SSL context
+                            SSLContext context = getSSLContext();
+                            SSLEngine engine = context.createSSLEngine();
+                            params.setNeedClientAuth(false);
+                            params.setCipherSuites(engine.getEnabledCipherSuites());
+                            params.setProtocols(engine.getEnabledProtocols());
+
+                            // Set the SSL parameters
+                            SSLParameters sslParameters = context.getSupportedSSLParameters();
+                            params.setSSLParameters(sslParameters);
+
+                        } catch (Exception ex) {
+                            System.out.println("Failed to create HTTPS port");
+                        }
+                    }
+                });
+                httpServer.createContext("/ServidorIOT", this);
+                ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+                httpServer.setExecutor(threadPoolExecutor);
+                this.httpServer.start();
+            } catch (Exception e) {
+                Log.log(this,e.getMessage(),"DEBUG");
+            }
+        }
+        else{
+            try {
+                servidorHttp = HttpServer.create(new InetSocketAddress(porta), 0);
+                servidorHttp.createContext("/ServidorIOT", this);
+                ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor)Executors
+                    .newFixedThreadPool(10);
+                servidorHttp.setExecutor(threadPoolExecutor);
+                this.servidorHttp.start();
+            } catch (Exception e) {
+                Log.log(this,"servidorHttp: "+e.getMessage(),"DEBUG");
+            }
+
         }
     }
 
@@ -134,11 +268,11 @@ public class ServidorRest implements HttpHandler {
                 Conector conRetirar = null;
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                 Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
-                Log.log(this,"plugon origem:" + plug.getIp()+" "+plug.getNome()+" "+plug.getId(),"INFO");
+                Log.log(this,"plugon origem:" + plug.getIp()+" "+plug.getNome()+" "+plug.getIdConector(),"INFO");
                 UUID uniqueKey = UUID.randomUUID();
                 String id = uniqueKey.toString();
                 for(Conector con :listaConectores){
-                    if(con.getId().equals(plug.getId())){
+                    if(con.getIdConector().equals(plug.getIdConector())){
                         plug.setReqRet("plug");  
                         Date date = new Date();
                         plug.setTimeStampAlive(String.valueOf(date.getTime()));
@@ -158,6 +292,8 @@ public class ServidorRest implements HttpHandler {
                     Log.log(this,"Configurando conector na lista.","INFO");
                     for(Conector con :listaConectores){
                         if(con.getNome().equals(plug.getNome())){
+                            conRetirar.setDevices(null);
+                            conRetirar.setButtons(null);
                             conRetirar = con;
                             break;
                         }
@@ -172,28 +308,27 @@ public class ServidorRest implements HttpHandler {
                         plug.setReqRet("plug");  
                         Date date = new Date();
                         plug.setTimeStampAlive(String.valueOf(date.getTime()));
-                    }
-                        
-                    plug.setId(id);
+                    } 
+                    if(plug.getButtons() == null || plug.getButtons().size()==0){
+                        if(!plug.getIot().getjSon().trim().equals("")){
+                            Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
+                            List<ButtonIot> listaBiot =gson.fromJson(plug.getIot().getjSon(), listType);
+                            plug.setButtons(listaBiot);
+                            plug.setDevices(new ArrayList<>());
+                            for(ButtonIot bIot:plug.getButtons()){
+                                RestControle rc = new RestControle();
+                                rc.setId(bIot.getButtonID());
+                                rc.toDo(plug);
+                                plug.getDevices().add(rc);                                    
+                            }                                
+                        }
+                    }                   
+                    plug.setIdConector(id);
                     listaConectores.add(plug);  
                     exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                     send(200,gson.toJson(plug),exchange);                  
                 }
-                else if(uri.getPath().equals("/ServidorIOT/comando")){
-                    Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-                    Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
-    
-                    for(Conector con :listaConectores){
-                        if(con.getNome().equals(plug.getNome())){
-                            Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
-                            List<ButtonIot> listaBiot = gson.fromJson(conector.getIot().getjSon(),listType);
-                            for (ButtonIot buttonIot : listaBiot) {
-                               
-                            }
-                        }
-                    }
-    
-                }
+                
                 else if(bErro) {
                     plug.setErro("Já existe um conector com este nome na lista.");
                     Log.log(this,"Já existe um conector com este nome na lista.","INFO");
@@ -206,15 +341,114 @@ public class ServidorRest implements HttpHandler {
                     send(200,gson.toJson(plug),exchange);
                 }
             }
+            else if(uri.getPath().equals("/ServidorIOT/loginServidorIOT")){
+                Log.log(this,"Logando...","DEBUG");
+
+                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                Usuario usuario = gson.fromJson(requestContent.toString(), Usuario.class);
+                try {
+                    usuario.setSenha(convertPasswordToMD5(usuario.getSenha()));
+                } catch (NoSuchAlgorithmException e1) {
+                   
+                }
+		        if( usuario.obterPorUsuarioSenha()){
+                    
+                    try{
+                        KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
+                        keyGenerator.initialize(2048);
+                
+                        KeyPair kp = keyGenerator.genKeyPair();
+                        //PublicKey publicKey = (PublicKey) kp.getPublic();
+                        PrivateKey privateKey = (PrivateKey) kp.getPrivate();
+                
+                        //String encodedPublicKey = Base64.getEncoder().encodeToString(publicKey.getEncoded());
+                        String token = Jwts.builder().setSubject(usuario.getNome())
+                        .setExpiration(
+                            Date.from(
+                                LocalDateTime.now().plusMinutes(15L)
+                                    .atZone(ZoneId.systemDefault())
+                                .toInstant()))
+                        .setIssuer("neuverse.com")
+                        .claim("groups", new String[] { "user", "admin","ServidorNeuverse","ServidorNeuverseIOT" })
+                        .signWith(privateKey)
+                        .compact();
+                        usuario.setToken(token);
+                         
+                    }  
+                    catch(Exception e){
+                        send(500,e.getMessage(),exchange);    
+                        Log.log(this,e.getMessage(),"DEBUG"); 
+                    }
+                }
+                usuario.setSenha(null);
+                String jSon = gson.toJson(usuario);
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                send(200,jSon,exchange); 
+
+            }
+            else if(uri.getPath().equals("/ServidorIOT/comando")){
+                try{
+                    Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                    Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
+               
+                    for(Conector con :listaConectores){
+                        if(con.getNome().equals(plug.getNome())){
+                            Log.log(this,"comando encontrou "+plug.getNome(),"INFO");
+                            Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
+                            List<ButtonIot> listaBiot = gson.fromJson(plug.getIot().getjSon(),listType);
+                            for (ButtonIot buttonIot : listaBiot) {
+                                for(Device device : con.getDevices()) {
+                                    if(device.getId().equals(buttonIot.getButtonID())){
+                                        if(buttonIot.getStatus().equals(Status.ON)){
+                                            device.on();
+                                        } 
+                                        else if(buttonIot.getStatus().equals(Status.OFF)){
+                                            device.off();
+                                        } 
+                                        else if(buttonIot.getStatus().equals(Status.PUSH)){
+                                            if(device.getStatus().equals(Status.ON)){
+                                                device.off();    
+                                            }
+                                            else
+                                                device.on();    
+                                        } 
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                    send(200,"Ok!",exchange);
+                }catch(Exception e){
+                    send(200,e.getMessage(),exchange);
+                }            
+
+            }
             else if(uri.getPath().equals("/ServidorIOT/listarIOTs")){
                 Log.log(this,"listarIOTs","INFO");
-                List<Conector> iots = new ArrayList<>();
-                for(Conector con :listaConectores){
-                    iots.add(con);
+                //List<String> iots = new ArrayList<>();
+                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").excludeFieldsWithoutExposeAnnotation().create();
+                try{
+                    /*for(Conector con :listaConectores){
+
+                        for(ButtonIot bIot : con.getButtons()){
+                            for(Device device: con.getDevices()){
+                                if(device.getId().equals(bIot.getButtonID())){
+                                    bIot.setStatus(device.getStatus());
+                                }
+                            }
+                        }
+                        String jSon = gson.toJson(con.getButtons());
+                        con.getIot().setjSon(jSon);
+                        iots.add(con.getIot().getjSon());
+                    }*/
+                    
+                    exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                    send(200,gson.toJson(listaConectores),exchange);
                 }
-                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-                send(200,gson.toJson(iots),exchange);
+                catch (Exception e) {
+                    send(500,e.getMessage(),exchange);
+                }
             }
             else{
                 send(404,"",exchange);
@@ -225,4 +459,28 @@ public class ServidorRest implements HttpHandler {
         }
     }   
     
+
+    /**
+     * @return HttpServer return the httpServer
+     */
+    public HttpsServer getHttpServer() {
+        return httpServer;
+    }
+
+    /**
+     * @param httpServer the httpServer to set
+     */
+    public void setHttpServer(HttpsServer httpServer) {
+        this.httpServer = httpServer;
+    }
+
+    public static String convertPasswordToMD5(String password) throws NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance("MD5");
+
+		BigInteger hash = new BigInteger(1, md.digest(password.getBytes()));
+
+		return String.format("%32x", hash);
+	}
+
+
 }

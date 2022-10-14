@@ -79,7 +79,7 @@ public class ControleBotao {
 		Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 		Conector conector = new Conector();
 		conector.setIot(gerarIot(st, iotDst, buttonId));
-		conector.setId("0");
+		conector.setIdConector("0");
 		conector.setTipo(TipoIOT.HUMAN);
 		conector.setNome(nome);
 		conector.setSenha(senha);

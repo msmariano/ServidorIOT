@@ -2,16 +2,26 @@ package br.com.neuverse.entity;
 
 import java.util.List;
 
+import com.google.gson.annotations.Expose;
+
 import br.com.neuverse.enumerador.TipoIOT;
 
 public class Iot {
+	@Expose(serialize = true)
 	private String id;
+	@Expose(serialize = true)
 	private String name;
+	@Expose(serialize = true)
 	private String jSon;
+	@Expose(serialize = true)
 	private String objeto;
+	@Expose(serialize = true)
 	private String protocolo;
+	@Expose(serialize = true)
 	private TipoIOT tipoIOT;
+	@Expose(serialize = true)
 	private String ip;
+	@Expose(serialize = true)
 	private List<IotServidor> servidores;
 	
 	public String getId() {

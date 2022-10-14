@@ -1,33 +1,69 @@
 package br.com.neuverse.entity;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import com.google.gson.annotations.Expose;
 
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 
 public class Conector {
 	
-	private String id;
+	@Expose(serialize = true)
+	private String idConector;
+	@Expose(serialize = true)
 	private String usuario;
+	@Expose(serialize = true)
 	private String senha;
+	@Expose(serialize = true)
 	private String ip;
+	@Expose(serialize = true)
 	private String nome;
+	@Expose(serialize = true)
 	private Iot iot;
+	@Expose(serialize = true)
 	private ControllerIot controlerIot;
+	@Expose(serialize = true)
 	private TipoIOT tipo;
+	@Expose(serialize = true)
 	private Status status;
+	@Expose(serialize = true)
 	private Mensagem mens;
+	@Expose(serialize = true)
 	private String erro;
+	@Expose(serialize = true)
 	private List<String> iots;
+	@Expose(serialize = true)
 	private String acao;
+	@Expose(serialize = true)
 	private String mac;
+	@Expose(serialize = true)
 	private String reqRet;
+	@Expose(serialize = true)
 	private String timeStampAlive;
+	@Expose(serialize = true)
 	private List<Conector> conectores;
+	@Expose(serialize = false)
+	private List<Device> devices;
+	@Expose(serialize = true)
+	private List<ButtonIot> buttons = new ArrayList<>();
 	
 
-	public String getId() {
-		return id;
+	public List<ButtonIot> getButtons() {
+		return buttons;
+	}
+	public void setButtons(List<ButtonIot> buttons) {
+		this.buttons = buttons;
+	}
+	public List<Device> getDevices() {
+		return devices;
+	}
+	public void setDevices(List<Device> devices) {
+		this.devices = devices;
+	}
+	public String getIdConector() {
+		return idConector;
 	}
 	public List<Conector> getConectores() {
 		return conectores;
@@ -59,8 +95,8 @@ public class Conector {
 	public void setAcao(String acao) {
 		this.acao = acao;
 	}
-	public void setId(String id) {
-		this.id = id;
+	public void setIdConector(String idConector) {
+		this.idConector = idConector;
 	}
 	public String getUsuario() {
 		return usuario;

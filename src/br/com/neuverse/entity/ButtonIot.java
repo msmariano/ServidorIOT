@@ -1,17 +1,39 @@
 package br.com.neuverse.entity;
 
+import com.google.gson.annotations.Expose;
+
 import br.com.neuverse.enumerador.Status;
 
 public class ButtonIot {
+
+	@Expose(serialize = true)
 	private Status tecla;
+	@Expose(serialize = true)
 	private Integer buttonID;
+	@Expose(serialize = true)
 	private Integer gpioNumControle;
+	@Expose(serialize = true)
 	private String nomeGpio;
+	@Expose(serialize = true)
 	private Integer gpioNum;
+	@Expose(serialize = true)
 	private Status status;
+	@Expose(serialize = true)
 	private String jSon;
+	@Expose(serialize = true)
 	private Status funcao;
+	@Expose(serialize = true)
 	private String ip;
+	@Expose(serialize = true)
+	private String nick;
+
+	public String getNick() {
+		return nick;
+	}
+
+	public void setNick(String nick) {
+		this.nick = nick;
+	}
 
 	public Status getTecla() {
 		return tecla;

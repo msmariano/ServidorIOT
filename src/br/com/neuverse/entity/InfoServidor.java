@@ -2,12 +2,24 @@ package br.com.neuverse.entity;
 
 import java.util.Date;
 
+import br.com.neuverse.principal.Main;
+
 public class InfoServidor {
 	private String nomeServidor;
 	private Date dataAtual;
 	private String ip;
 	private String nomeComputador;
 	private String versao;
+	private Date upTime;
+	
+	public Date getUpTime() {
+		return upTime;
+	}
+	public void setUpTime(Date upTime) {
+		this.upTime = upTime;
+	}
+
+	private Main main;
 
 	public String getNomeServidor() {
 		return nomeServidor;
@@ -41,5 +53,20 @@ public class InfoServidor {
 		this.dataAtual = dataAtual;
 	}
 	
+
+
+    /**
+     * @return Main return the main
+     */
+    public Main getMain() {
+        return main;
+    }
+
+    /**
+     * @param main the main to set
+     */
+    public void setMain(Main main) {
+        this.main = main;
+    }
 
 }
