@@ -1,0 +1,2 @@
+Comunicacao com socket seguro
+openssl s_client -connect localhost:27016

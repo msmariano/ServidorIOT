@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -17,6 +20,8 @@ import java.util.UUID;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
+
 import com.google.gson.reflect.TypeToken;
 
 import br.com.neuverse.database.Usuario;
@@ -173,10 +178,24 @@ public class Cliente implements Runnable {
 			}
 	}
 
+	public static String convertPasswordToMD5(String password) throws NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance("MD5");
+
+		BigInteger hash = new BigInteger(1, md.digest(password.getBytes()));
+
+		return String.format("%32x", hash);
+	}
+
 	public Boolean processarLogin(Conector conector) throws SQLException{		
-		Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+		Gson gson = new GsonBuilder()
+		.setDateFormat("dd/MM/yyyy HH:mm:ss")
+		.excludeFieldsWithoutExposeAnnotation()
+		.create();
 		Usuario usuario = new Usuario();
-		usuario.setSenha(conector.getSenha());
+		try {
+			usuario.setSenha(convertPasswordToMD5(conector.getSenha()));
+		} catch (NoSuchAlgorithmException e1) {			
+		}
 		usuario.setUsuario(conector.getUsuario());
 		isLogado = usuario.obterPorUsuarioSenha();
 		if(isLogado) {
@@ -215,7 +234,8 @@ public class Cliente implements Runnable {
 	@Override
 	public void run() {
 		try {
-			entrada = new BufferedReader(new InputStreamReader(socketCliente.getInputStream()));
+			entrada = new BufferedReader(new InputStreamReader(socketCliente.getInputStream(),
+				StandardCharsets.UTF_8.name()));
 			while (true) {
 				String mens = entrada.readLine();
 				if (mens == null){
@@ -223,7 +243,9 @@ public class Cliente implements Runnable {
 					break;
 				}
 				Log.grava(mens);
-				Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+				Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss")
+					.excludeFieldsWithoutExposeAnnotation()
+					.create();
 				try {
 					if(!mens.equals("")) {
 						Conector conector = gson.fromJson(mens, Conector.class);

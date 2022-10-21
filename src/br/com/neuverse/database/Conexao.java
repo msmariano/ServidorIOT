@@ -16,11 +16,22 @@ public class Conexao {
 			//connection = DriverManager.getConnection("jdbc:sqlite:cfgServidor.db");
 			if(connection  == null) {
 				connection = DriverManager.getConnection("jdbc:postgresql://192.168.10.254:5432/ServidorIOT","msmarino","mar0403");
-				Log.log(this,"Iniciando conexao postgresql","INFO");
+				Log.log(this,"Iniciando conexao postgresql","DEBUG");
 			}
 
-		} catch (SQLException e) {
-			Log.log(this,"erro:" + e.getMessage(),"INFO");
+		} catch (Exception e) {
+			Log.log(this,"erro:" + e.getMessage(),"DEBUG");
+			try{
+				
+				if(connection  == null) {
+					connection = DriverManager.getConnection("jdbc:sqlite:/home/pi/Desktop/cfgServidor.db");
+					Log.log(this,"Iniciando conexao sqlite","DEBUG");
+				}
+
+			}
+			catch(Exception e1){
+				Log.log(this,"erro1:" + e.getMessage(),"DEBUG");
+			}
 		}
 	}
 

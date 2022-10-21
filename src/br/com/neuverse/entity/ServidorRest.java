@@ -120,6 +120,7 @@ public class ServidorRest implements HttpHandler {
         }*/
     }
     public ServidorRest(Boolean https,int porta){
+        super();
         if(https) {
             try {                
                 httpServer = HttpsServer.create(new InetSocketAddress(porta), 0);
@@ -258,9 +259,14 @@ public class ServidorRest implements HttpHandler {
 
             if(uri.getPath().equals("/ServidorIOT/info")){
                 exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-                String jSon = gson.toJson(infoServidor);
-                send(200,jSon,exchange);
+                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").excludeFieldsWithoutExposeAnnotation().create();
+                try{
+                    String jSon = gson.toJson(infoServidor);
+                    send(200,jSon,exchange);
+                }
+                catch(Exception e){
+                    send(500,e.getMessage(),exchange);
+                }
             }
             else if(uri.getPath().equals("/ServidorIOT/plugon")){
                 boolean bConfigure = true;

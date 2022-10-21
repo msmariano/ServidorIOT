@@ -42,7 +42,7 @@ public class Conector {
 	private String reqRet;
 	@Expose(serialize = true)
 	private String timeStampAlive;
-	@Expose(serialize = true)
+	@Expose(serialize = false)
 	private List<Conector> conectores;
 	@Expose(serialize = false)
 	private List<Device> devices;
