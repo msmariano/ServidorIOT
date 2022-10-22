@@ -1,0 +1,1 @@
+{"resultado":"13:11:47","retorno":"Ok","acao":"getHora","estadoAtual":0}

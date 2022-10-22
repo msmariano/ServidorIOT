@@ -1,0 +1,5 @@
+sudo mount -t cifs //192.168.0.108/Temp -o username=msmariano@hotmail.com,password=#Z3li@040370_2 /mnt/Windows
+sudo ssh -fNR 27015:192.168.0.254:27015 pi@rasp4msmariano.dynv6.net
+java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 ServidorIOT.jar
+ssh-keygen -t rsa
+ssh-copy-id pi@rasp4msmariano.dynv6.net
