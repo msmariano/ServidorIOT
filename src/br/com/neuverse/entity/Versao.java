@@ -3,8 +3,8 @@ package br.com.neuverse.entity;
 import java.util.Date;
 
 public class Versao {
-    static final String versao = "1.0.12";
-    static final String data = "14/10/2022 20:00";
+    static final String versao = "1.0.13";
+    static final String data = "22/10/2022 21:00";
     public Versao(){
         upDate = new Date();
     }

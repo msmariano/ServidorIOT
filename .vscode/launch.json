@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch TesteToken",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.TesteToken",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "Launch SimpleHTTPSServer",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.SimpleHTTPSServer",

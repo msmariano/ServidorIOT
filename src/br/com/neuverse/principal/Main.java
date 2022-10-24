@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -132,8 +133,8 @@ public class Main {
 		listaConectores.add(conector);
 	}
 	public void inicializar() throws IOException {
-		ServidorRest servidorRest = new ServidorRest(true,8082);
-		ServidorRest servidorRestNoSSL = new ServidorRest(false,8083);
+		ServidorRest servidorRest = new ServidorRest(true,8080);
+		ServidorRest servidorRestNoSSL = new ServidorRest(false,8081);
 		infoServidor = new InfoServidor();
 		infoServidor.setVersao(ver.ver());
 		infoServidor.setUpTime(ver.getUpDate());
@@ -147,9 +148,9 @@ public class Main {
 		servidorRest.setListaConectores(listaConectores);
 		servidorRestNoSSL.setListaConectores(listaConectores);
 		
-		servidor = new ServerSocket(serverPortDefault);
+		servidor = new ServerSocket(serverPortDefault+1);
 		try {
-			servidorWithSSL	= getServerSocket(serverPortDefault+1);
+			servidorWithSSL	= getServerSocket(serverPortDefault);
 		} catch (Exception e) {
 			Log.log(this,e.getMessage(),"DEBUG");
 		}
@@ -242,15 +243,14 @@ public class Main {
 		}.start();
 	}
 
-	private  ServerSocket getServerSocket(Integer porta)
-        throws Exception {
+	private  ServerSocket getServerSocket(Integer porta)throws Exception {
 
 		InetSocketAddress address = new InetSocketAddress("0.0.0.0", porta);
 		// Backlog is the maximum number of pending connections on the socket,
 		// 0 means that an implementation-specific default is used
 		int backlog = 0;
 
-		Path keyStorePath = Path.of("/home/pi/Desktop/servidoriothttps.jks");
+		Path keyStorePath = Paths.get("/home/pi/Desktop/servidoriothttps.jks");
 		char[] keyStorePassword = "password".toCharArray();
 
 		// Bind the socket to the given port and address
@@ -258,7 +258,6 @@ public class Main {
 				.getServerSocketFactory()
 				.createServerSocket(address.getPort(), backlog, address.getAddress());
 
-		// We don't need the password anymore → Overwrite it
 		Arrays.fill(keyStorePassword, '0');
 
 		return serverSocket;
