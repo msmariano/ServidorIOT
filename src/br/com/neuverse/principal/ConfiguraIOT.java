@@ -49,15 +49,20 @@ import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
-import javax.bluetooth.DiscoveryAgent;
-import javax.bluetooth.LocalDevice;
-import javax.bluetooth.RemoteDevice;
+
+import javax.bluetooth.*;
 
 public class ConfiguraIOT implements ActionListener{
-    JFrame f = new JFrame();
+    static final UUID OBEX_FILE_TRANSFER = new UUID(0x1106);
 
+    public static final Vector/*<String>*/ serviceFound = new Vector();
+    JFrame f = new JFrame();
+    public static final Vector/*<RemoteDevice>*/ devicesDiscovered = new Vector();
+
+    private static final UUID OBEX_OBJECT_PUSH = new UUID(0x1107);
     JFormattedTextField ipLocal = new JFormattedTextField();
     JFormattedTextField tfssid = new JFormattedTextField();
     JFormattedTextField tfssidpassw = new JFormattedTextField();
@@ -86,6 +91,69 @@ public class ConfiguraIOT implements ActionListener{
         }
         ConfiguraIOT conf = new ConfiguraIOT();
         conf.gerarTelaConfig();
+
+
+        // First run RemoteDeviceDiscovery and use discoved device
+        RemoteDeviceDiscovery.main(null);
+
+        serviceFound.clear();
+
+        UUID serviceUUID = OBEX_OBJECT_PUSH;
+        if ((args != null) && (args.length > 0)) {
+            serviceUUID = new UUID(args[0], false);
+        }
+
+        final Object serviceSearchCompletedEvent = new Object();
+
+        DiscoveryListener listener = new DiscoveryListener() {
+
+            public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
+            }
+
+            public void inquiryCompleted(int discType) {
+            }
+
+            public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+                for (int i = 0; i < servRecord.length; i++) {
+                    String url = servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+                    if (url == null) {
+                        continue;
+                    }
+                    serviceFound.add(url);
+                    DataElement serviceName = servRecord[i].getAttributeValue(0x0100);
+                    if (serviceName != null) {
+                        System.out.println("service " + serviceName.getValue() + " found " + url);
+                    } else {
+                        System.out.println("service found " + url);
+                    }
+                }
+            }
+
+            public void serviceSearchCompleted(int transID, int respCode) {
+                System.out.println("service search completed!");
+                synchronized(serviceSearchCompletedEvent){
+                    serviceSearchCompletedEvent.notifyAll();
+                }
+            }
+
+        };
+
+        UUID[] searchUuidSet = new UUID[] { serviceUUID };
+        int[] attrIDs =  new int[] {
+                0x0100 // Service name
+        };
+
+        for(Enumeration en = RemoteDeviceDiscovery.devicesDiscovered.elements(); en.hasMoreElements(); ) {
+            RemoteDevice btDevice = (RemoteDevice)en.nextElement();
+
+            synchronized(serviceSearchCompletedEvent) {
+                System.out.println("search services on " + btDevice.getBluetoothAddress() + " " + btDevice.getFriendlyName(false));
+                LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(attrIDs, searchUuidSet, btDevice, listener);
+                serviceSearchCompletedEvent.wait();
+            }
+        }
+
+    
 
         /*
          * conf.configIOT.getSsidSessao().setPassword("80818283");
@@ -183,13 +251,8 @@ public class ConfiguraIOT implements ActionListener{
     public void setConfig() {
         try {
 
-            LocalDevice localDevice = LocalDevice.getLocalDevice();
-
-            RemoteDevice[] remoteDevice = localDevice.getDiscoveryAgent().retrieveDevices(DiscoveryAgent.PREKNOWN);
-
-            for(RemoteDevice rm : remoteDevice) {
-                System.out.print("Devices: " + rm.getFriendlyName(false));
-            }
+            
+    
 
             Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
             // HTMLDocument doc = (HTMLDocument) pane.getDocument();
