@@ -214,6 +214,7 @@ public class Cliente implements Runnable {
 			Log.log(this,"Inserindo "+nickName,"DEBUG");
 			//if(conector.getTipo()!=null&&conector.getTipo().equals(TipoIOT.HUMAN)) {
 				conector.setConectores(listaConectores);
+				listaConectores.add(conector);
 			//}
 			Log.log(this,"Cliente:"+nickName+" logado","DEBUG");
 		}

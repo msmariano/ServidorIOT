@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch JTableButtonTest",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.JTableButtonTest",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "Launch TesteToken",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.TesteToken",
