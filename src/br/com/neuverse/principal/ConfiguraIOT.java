@@ -1,16 +1,20 @@
 package br.com.neuverse.principal;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.AbstractTableModel;
@@ -27,6 +31,9 @@ import javax.swing.text.html.HTML.Attribute;
 import java.awt.FlowLayout;
 import org.w3c.dom.events.MouseEvent;
 import java.awt.Color;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -44,7 +51,13 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -54,14 +67,20 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.bluetooth.*;
+import javax.microedition.io.Connection;
+import javax.microedition.io.Connector;
+import javax.microedition.io.StreamConnection;
+import javax.obex.ClientSession;
+import javax.obex.HeaderSet;
+import javax.obex.ResponseCodes;
 
-public class ConfiguraIOT implements ActionListener{
+public class ConfiguraIOT extends JFrame implements ActionListener {
     static final UUID OBEX_FILE_TRANSFER = new UUID(0x1106);
-
-    public static final Vector/*<String>*/ serviceFound = new Vector();
+    public JLabel statusTxt = new JLabel("Parado.");
+    public static final Vector/* <String> */ serviceFound = new Vector();
     JFrame f = new JFrame();
-    public static final Vector/*<RemoteDevice>*/ devicesDiscovered = new Vector();
-
+    public static final Vector/* <RemoteDevice> */ devicesDiscovered = new Vector();
+    RemoteDevice blueIOTDevice;
     private static final UUID OBEX_OBJECT_PUSH = new UUID(0x1107);
     JFormattedTextField ipLocal = new JFormattedTextField();
     JFormattedTextField tfssid = new JFormattedTextField();
@@ -70,18 +89,17 @@ public class ConfiguraIOT implements ActionListener{
     JButton ler = new JButton("ler");
     JButton acBt = new JButton("+");
     JEditorPane pane = new JEditorPane();
+    JPanel statusConfig = new JPanel();
     ConfigIOT configIOT = new ConfigIOT();
     JLabel totBiot = new JLabel();
-    // String [] colunas = {"ID", "PinIN",
-    // "PinOUT","Nick","Funcao","Status","Tecla"};
-    /*
-     * Object [][] dados = {
-     * {"",new JButton("+"),new JButton("+"),new JButton("+"),new JButton("+"),new
-     * JButton("+"),new JButton("+")}
-     * };
-     */
-    // DefaultTableModel tableModel = new DefaultTableModel(dados, colunas);
-    JTable tabela;// = new JTable(tableModel);
+    JTable tabela;
+    RemoteDeviceDiscovery rdd = new RemoteDeviceDiscovery();
+
+    public ConfiguraIOT(){
+        
+        
+
+    }
 
     public static void main(String[] args) throws Exception {
         try {
@@ -91,69 +109,6 @@ public class ConfiguraIOT implements ActionListener{
         }
         ConfiguraIOT conf = new ConfiguraIOT();
         conf.gerarTelaConfig();
-
-
-        // First run RemoteDeviceDiscovery and use discoved device
-        RemoteDeviceDiscovery.main(null);
-
-        serviceFound.clear();
-
-        UUID serviceUUID = OBEX_OBJECT_PUSH;
-        if ((args != null) && (args.length > 0)) {
-            serviceUUID = new UUID(args[0], false);
-        }
-
-        final Object serviceSearchCompletedEvent = new Object();
-
-        DiscoveryListener listener = new DiscoveryListener() {
-
-            public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-            }
-
-            public void inquiryCompleted(int discType) {
-            }
-
-            public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
-                for (int i = 0; i < servRecord.length; i++) {
-                    String url = servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
-                    if (url == null) {
-                        continue;
-                    }
-                    serviceFound.add(url);
-                    DataElement serviceName = servRecord[i].getAttributeValue(0x0100);
-                    if (serviceName != null) {
-                        System.out.println("service " + serviceName.getValue() + " found " + url);
-                    } else {
-                        System.out.println("service found " + url);
-                    }
-                }
-            }
-
-            public void serviceSearchCompleted(int transID, int respCode) {
-                System.out.println("service search completed!");
-                synchronized(serviceSearchCompletedEvent){
-                    serviceSearchCompletedEvent.notifyAll();
-                }
-            }
-
-        };
-
-        UUID[] searchUuidSet = new UUID[] { serviceUUID };
-        int[] attrIDs =  new int[] {
-                0x0100 // Service name
-        };
-
-        for(Enumeration en = RemoteDeviceDiscovery.devicesDiscovered.elements(); en.hasMoreElements(); ) {
-            RemoteDevice btDevice = (RemoteDevice)en.nextElement();
-
-            synchronized(serviceSearchCompletedEvent) {
-                System.out.println("search services on " + btDevice.getBluetoothAddress() + " " + btDevice.getFriendlyName(false));
-                LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(attrIDs, searchUuidSet, btDevice, listener);
-                serviceSearchCompletedEvent.wait();
-            }
-        }
-
-    
 
         /*
          * conf.configIOT.getSsidSessao().setPassword("80818283");
@@ -251,9 +206,6 @@ public class ConfiguraIOT implements ActionListener{
     public void setConfig() {
         try {
 
-            
-    
-
             Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
             // HTMLDocument doc = (HTMLDocument) pane.getDocument();
             // String posicao = (String)
@@ -324,18 +276,22 @@ public class ConfiguraIOT implements ActionListener{
 
     }
 
-    @SuppressWarnings({"unchecked", "deprecated"})
-    public Status pegarStatus(Object obj){
-        JComboBox<Status> cbF = (JComboBox<Status>)obj;
+    @SuppressWarnings({ "unchecked", "deprecated" })
+    public Status pegarStatus(Object obj) {
+        JComboBox<Status> cbF = (JComboBox<Status>) obj;
         return (Status) cbF.getSelectedItem();
 
     }
 
-    public Integer tfTextToInteger(Object obj){
-        JTextField jid = (JTextField)obj;
-        return Integer.parseInt(jid.getText());    }
+    public Integer tfTextToInteger(Object obj) {
+        JTextField jid = (JTextField) obj;
+        return Integer.parseInt(jid.getText());
+    }
 
     public void gerarTelaConfig() {
+        
+
+
 
         TableCellRenderer tableRenderer;
         tabela = new JTable(new JTableButtonModel());
@@ -343,18 +299,20 @@ public class ConfiguraIOT implements ActionListener{
         tableRenderer = tabela.getDefaultRenderer(Object.class); // JButton.class);
         tabela.setDefaultRenderer(/* JButton.class */Object.class, new JTableButtonRenderer(tableRenderer));
         tabela.addMouseListener(new JTableMouseListener(tabela));
-        tabela.setDefaultEditor(Object.class,new CellEditor());
+        tabela.setDefaultEditor(Object.class, new CellEditor());
 
-        JLabel lbssid = new JLabel("ssid:");
-        JLabel lbssidpassw = new JLabel("ssidPwd:");
-        f.setSize(500, 500);
+        JLabel lbssid = new JLabel("SSID:");
+        lbssid.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        JLabel lbssidpassw = new JLabel("Senha:");
+        lbssidpassw.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        f.setSize(500, 520);
         f.setLayout(new BorderLayout());
         Dimension ds = Toolkit.getDefaultToolkit().getScreenSize();
         Dimension dw = f.getSize();
         f.setLocation((ds.width - dw.width) / 2, (ds.height - dw.height) / 2);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setResizable(false);
-        f.setTitle("Configuração IOT by Neuverse(v1.2.100_a)");
+        f.setTitle("Configuracao IOT by Neuverse(v1.2.100_a)");
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(f.getContentPane());
         f.getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -364,23 +322,46 @@ public class ConfiguraIOT implements ActionListener{
 
         tabela.addMouseListener(null);
         JScrollPane barraRolagem = new JScrollPane(tabela);
-        lbssid.setBounds(20, 25, 70, 20);
+        lbssid.setBounds(27, 25, 70, 20);
         tfssid.setBounds(100, 25, 100, 20);
         lbssidpassw.setBounds(20, 50, 70, 20);
         tfssidpassw.setBounds(100, 50, 100, 20);
         barraRolagem.setBounds(20, 150, 460, 150);
         acBt.setBounds(200, 301, 100, 20);
         pane.setBounds(50, 180, 300, 200);
-        gravar.setBounds(150, 450, 100, 20);
-        ler.setBounds(250, 450, 100, 20);
+        gravar.setBounds(150, 400, 100, 20);
+        ler.setBounds(250, 400, 100, 20);
         totBiot.setBounds(50, 150, 200, 20);
+        statusConfig.setBounds(0, 440, 500, 20);
+        statusConfig.setVisible(true);
+        statusConfig.setBackground(Color.GRAY);
+        statusConfig.setBorder(BorderFactory.createLineBorder(Color.orange, 2));
+        statusConfig.add(statusTxt);
+        
+        JMenuBar menuBar = new JMenuBar();
+        f.setJMenuBar(menuBar);
+        JMenu fileMenu = new JMenu("Arquivo");
+        JMenu editMenu = new JMenu("Edit");
+        menuBar.add(fileMenu);
+        menuBar.add(editMenu);
+        // Cria e adiciona um item simples para o menu
+        JMenuItem newAction = new JMenuItem("New");
+        JMenuItem openAction = new JMenuItem("Open");
+        JMenuItem exitAction = new JMenuItem("Exit");
+        JMenuItem cutAction = new JMenuItem("Cut");
+        JMenuItem copyAction = new JMenuItem("Copy");
+        JMenuItem pasteAction = new JMenuItem("Paste");
+        JCheckBoxMenuItem checkAction = new JCheckBoxMenuItem("Check Action");
+        fileMenu.add(newAction);
+        fileMenu.add(openAction);
+        fileMenu.add(checkAction);
+        fileMenu.addSeparator();
+        fileMenu.add(exitAction);
+        editMenu.add(cutAction);
+        editMenu.add(copyAction);
+        editMenu.add(pasteAction);
+        menuBar.setVisible(true);
 
-
-        JComboBox cb = new JComboBox(Status.listDescricao().toArray());
-
-cb.setBounds(300, 0, 100, 20);
-
-        f.add(cb);
         f.add(lbssid);
         f.add(tfssid);
         f.add(lbssidpassw);
@@ -390,7 +371,15 @@ cb.setBounds(300, 0, 100, 20);
         f.add(totBiot);
         f.add(barraRolagem);
         f.add(acBt);
+        f.add(statusConfig);
         f.setVisible(true);
+
+        rdd.setLabel(statusTxt);
+        try {
+            rdd.main();
+        } catch (Exception e){
+            
+        }
 
         gravar.addActionListener(new ActionListener() {
             @Override
@@ -399,20 +388,21 @@ cb.setBounds(300, 0, 100, 20);
                 configIOT = new ConfigIOT();
                 configIOT.getSsidSessao().setSsid(tfssid.getText());
                 configIOT.getSsidSessao().setPassword(tfssidpassw.getText());
-                JTableButtonModel modelo = (JTableButtonModel)tabela.getModel();
-                for(Object obj[] : modelo.getRows()){
-                    JTextField nick = (JTextField)obj[3];                                      
+                JTableButtonModel modelo = (JTableButtonModel) tabela.getModel();
+                for (Object obj[] : modelo.getRows()) {
+                    JTextField nick = (JTextField) obj[3];
                     ButtonIot bIot = gerarConfBt(
-                        tfTextToInteger(obj[0]),
-                        tfTextToInteger(obj[1]),
-                        tfTextToInteger(obj[2]),
-                        nick.getText(),
-                        pegarStatus(obj[4]),
-                        pegarStatus(obj[5]),
-                        pegarStatus(obj[6]));
+                            tfTextToInteger(obj[0]),
+                            tfTextToInteger(obj[1]),
+                            tfTextToInteger(obj[2]),
+                            nick.getText(),
+                            pegarStatus(obj[4]),
+                            pegarStatus(obj[5]),
+                            pegarStatus(obj[6]));
                     configIOT.getButtonIOTSessao().add(bIot);
-                }               
+                }
                 setConfig();
+                System.out.println(serviceFound.size());
             }
         });
 
@@ -429,6 +419,61 @@ cb.setBounds(300, 0, 100, 20);
         ler.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                for (RemoteDevice btDevice : rdd.getDevicesDiscovered()) {
+                    try {
+                        if (btDevice.getFriendlyName(false).equals("neuverseBTIot")) {
+                            blueIOTDevice = btDevice;
+                            new Thread() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        String url = "btspp://" + btDevice.getBluetoothAddress()
+                                                + ":1;authenticate=false;encrypt=false;master=false";
+                                        StreamConnection streamConnection = (StreamConnection) Connector.open(url);
+                                        OutputStream outStream = streamConnection.openOutputStream();
+                                        PrintWriter pWriter = new PrintWriter(new OutputStreamWriter(outStream));
+                                        ConfigIOT confIOT = new ConfigIOT();
+                                        Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                                        configIOT.setAcao("retConfig");
+                                        String jSon= gson.toJson(configIOT,ConfigIOT.class);
+                                        pWriter.write(jSon);
+                                        pWriter.flush();
+                                        InputStream inStream = streamConnection.openInputStream();
+                                        BufferedReader bReader2 = new BufferedReader(new InputStreamReader(inStream));
+                                        String lineRead = bReader2.readLine();
+                                        System.out.println(lineRead);
+                                        configIOT = gson.fromJson(lineRead, ConfigIOT.class);
+                                       if(configIOT.getSsidSessao()!=null){
+                                            tfssid.setText(configIOT.getSsidSessao().getSsid());
+                                            tfssidpassw.setText(configIOT.getSsidSessao().getPassword());    
+                                       }
+                                       if(configIOT.getButtonIOTSessao()!=null){
+                                            for(ButtonIot bIot : configIOT.getButtonIOTSessao()){
+                                                JTableButtonModel modelo = (JTableButtonModel) tabela.getModel();
+                                                
+                                                if(bIot.getFuncao()!=null&&bIot.getStatus()!=null&&bIot.getTecla()!=null
+                                                    &&bIot.getButtonID()!=null){
+                                                    if(bIot.getNick()!=null)
+                                                        modelo.newRecordData(bIot.getNick(),bIot.getFuncao(),bIot.getStatus(),bIot.getTecla());
+                                                    else if(bIot.getNomeGpio()!=null)
+                                                        modelo.newRecordData(bIot.getNomeGpio(),bIot.getFuncao(),bIot.getStatus(),bIot.getTecla());
+                                                }
+                                                modelo.fireTableDataChanged();
+                                            }
+
+                                       }
+                                        
+
+                                    } catch (Exception e) {
+                                        statusTxt.setText(e.getMessage());
+                                    }
+                                }
+                            }.start();
+                        }
+                    } catch (IOException e1) {
+                    }
+                }
+
                 // retConfig();
 
                 // tfssid.setText((String)tableModel.getValueAt(0, 0));
@@ -438,7 +483,7 @@ cb.setBounds(300, 0, 100, 20);
 
     @Override
     public void actionPerformed(ActionEvent event) {
-        
+
     }
 
     public void networkPing() throws IOException {
@@ -516,11 +561,13 @@ cb.setBounds(300, 0, 100, 20);
  * 
  * 
  */
-class JTableButtonRenderer  implements TableCellRenderer {
+class JTableButtonRenderer implements TableCellRenderer {
     private TableCellRenderer defaultRenderer;
+
     public JTableButtonRenderer(TableCellRenderer renderer) {
         defaultRenderer = renderer;
     }
+
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
             int row, int column) {
         if (value instanceof Component)
@@ -528,6 +575,3 @@ class JTableButtonRenderer  implements TableCellRenderer {
         return defaultRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
     }
 }
-
-
-

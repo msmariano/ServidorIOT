@@ -30,14 +30,34 @@ public class JTableButtonModel extends AbstractTableModel implements TableCellEd
     Integer inicial = 1;
 
     public JTableButtonModel() {
-
-        newRecord();
+        //newRecord();
     }
 
     private String[] columns = { "ID", "PinIN", "PinOUT", "Nick", "Funcao", "Status", "Tecla", "" };
 
     public String getColumnName(int column) {
         return columns[column];
+    }
+    public void newRecordData(String nick,Status stbF,Status stbS,Status stbt ) {
+        JButton jb = new JButton("Ok");
+        jb.addActionListener(this);
+        JComboBox<Status> jcbF = new JComboBox<Status>(Status.values());
+        jcbF.setSelectedItem(stbF);
+        JComboBox<Status> jcbS = new JComboBox<Status>(Status.values());
+        jcbS.setSelectedItem(stbS);
+        JComboBox<Status> jcbT = new JComboBox<Status>(Status.values());
+        jcbT.setSelectedItem(stbt);
+
+        Object[] rowl = { new JTextField("1"), 
+                new JTextField("1"), 
+                new JTextField("1"), 
+                new JTextField(nick),
+                jcbF,
+                jcbS, 
+                jcbT, 
+                jb };
+        rows.add(rowl);
+        inicial++;
     }
   
     public void newRecord() {

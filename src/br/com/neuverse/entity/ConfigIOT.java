@@ -58,6 +58,33 @@ public class ConfigIOT {
     private ServidorSessao servidorSessao;
     private ServidorRestSessao servidorRestSessao;
     private ConectorSessao conectorSessao;
+    private String acao;
+    public String getAcao() {
+        return acao;
+    }
+
+    public void setAcao(String acao) {
+        this.acao = acao;
+    }
+
+    private String resultado;
+    public String getResultado() {
+        return resultado;
+    }
+
+    public void setResultado(String resultado) {
+        this.resultado = resultado;
+    }
+
+    private String statusConWifi;
+
+    public String getStatusConWifi() {
+        return statusConWifi;
+    }
+
+    public void setStatusConWifi(String statusConWifi) {
+        this.statusConWifi = statusConWifi;
+    }
 
     public class ServidorSessao{
         private String endereco;
