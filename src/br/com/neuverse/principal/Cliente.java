@@ -11,6 +11,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,6 +28,7 @@ import com.google.gson.reflect.TypeToken;
 import br.com.neuverse.database.Usuario;
 import br.com.neuverse.entity.ButtonGpioRaspPi;
 import br.com.neuverse.entity.ButtonIot;
+import br.com.neuverse.entity.ButtonIotDevice;
 import br.com.neuverse.entity.Conector;
 import br.com.neuverse.entity.Mensagem;
 import br.com.neuverse.enumerador.Status;
@@ -43,6 +45,16 @@ public class Cliente implements Runnable {
 	private String nomeIotCliente;
 	private String ipCliente;
 	private Boolean isLogado = false;
+	private Conector conectorCliente;
+	private LocalDateTime timeAlive;
+	public Conector getConectorCliente() {
+		return conectorCliente;
+	}
+
+	public void setConectorCliente(Conector conectorCliente) {
+		this.conectorCliente = conectorCliente;
+	}
+
 	public Boolean getIsLogado() {
 		return isLogado;
 	}
@@ -90,8 +102,16 @@ public class Cliente implements Runnable {
 			case ALIVE:
 				processarAlive(con);
 				break;
+			case COMANDO:
+				break;
 			case CONTROLLERCOMMAND:
 				processarControllerCommand(con);
+				break;
+			case NOTIFICACAO:
+				Log.log(this,"NOTIFICACAO ","DEBUG");
+				conectorCliente.setButtons(null);
+				conectorCliente.setButtons(con.getButtons());
+				enviarAtualizar();
 				break;
 			case LOGIN:
 				processarLogin(con);
@@ -103,7 +123,10 @@ public class Cliente implements Runnable {
 				break;			
 		}
 	}
-	
+
+	public void comando(List<Conector> lista){
+
+	}
 	public void processarControllerCommand(Conector conector) {
 		if(!isLogado){
 			try {
@@ -143,8 +166,9 @@ public class Cliente implements Runnable {
 		Usuario usuario;
 		try {
 			usuario = new Usuario();
-			return usuario.retornaUsuario(con.getUsuario(), con.getSenha());
-		} catch (SQLException e) {
+			usuario.setSenha(convertPasswordToMD5(con.getSenha()));
+			return usuario.retornaUsuario(con.getUsuario(), usuario.getSenha());
+		} catch (Exception e) {
 			
 		}
 		return false;
@@ -171,11 +195,16 @@ public class Cliente implements Runnable {
 			String jSon = gson.toJson(conector);
 			enviar(jSon + "\r\n");
 			Log.log(this,"Alive:"+conector.getNome()+" "+conector.getMens().getMens(),"INFO");
+			timeAlive = LocalDateTime.now();
+			
 		} else
+		{
+			Log.log(this,"Desconectado login invalido Alive","DEBUG");
 			try {
 				socketCliente.close();
 			} catch (IOException e) {
 			}
+		}
 	}
 
 	public static String convertPasswordToMD5(String password) throws NoSuchAlgorithmException {
@@ -212,23 +241,74 @@ public class Cliente implements Runnable {
 			conector.setIdConector(uniqueKey.toString());
 			id = uniqueKey.toString();
 			Log.log(this,"Inserindo "+nickName,"DEBUG");
-			//if(conector.getTipo()!=null&&conector.getTipo().equals(TipoIOT.HUMAN)) {
-				conector.setConectores(listaConectores);
+			
+			for(Conector con : listaConectores){
+				if(con.getNome().equals(conector.getNome())){
+					listaConectores.remove(con);
+					break;
+				}
+			}
+			
+
 				listaConectores.add(conector);
-			//}
+			
 			Log.log(this,"Cliente:"+nickName+" logado","DEBUG");
+			if(conector.getTipo()!=null&&!conector.getTipo().equals(TipoIOT.HUMAN)) {
+			    conector.setDevices(new ArrayList<>());
+				for(ButtonIot bIot : conector.getButtons()){
+					if(bIot.getNick()==null){
+						if(bIot.getNomeGpio()!=null){
+							bIot.setNick(bIot.getNomeGpio());
+						}
+					}
+					ButtonIotDevice bIotDevice = new ButtonIotDevice();
+					bIotDevice.setSocket(socketCliente);
+					bIotDevice.setbIot(bIot);
+					bIotDevice.setClientes(clientes);
+					bIotDevice.toDo(conector);					
+					conector.getDevices().add(bIotDevice);	
+				}
+			}
+			conectorCliente = conector;
 		}
 		else {
 			conector.setStatus(Status.LOGIN_FAIL);
-		}		
-		String jSon = gson.toJson(conector);
-		enviar(jSon + "\r\n");
+		}
+		try{		
+			String jSon = gson.toJson(conector);
+			enviar(jSon + "\r\n");
+		}
+		catch(Exception e){
+			Log.log(this, e.getMessage(), "DEBUG");
+
+		}
 		if(!isLogado)
 			try {
 				socketCliente.close();
 			} catch (IOException e) {
 			}
 		
+			timeAlive = LocalDateTime.now();
+			new Thread() {
+				@Override
+				public void run() {
+					try {
+						while(true){
+							Thread.sleep(1000*40);
+							if(timeAlive.isBefore(LocalDateTime.now().minusSeconds(30))){
+								try {
+									Log.log(this,"timeout alive","DEBUG");
+									socketCliente.close();
+									break;
+								} catch (IOException e) {
+									
+								}
+							}
+						}
+					} catch (InterruptedException e) {
+					}
+				}
+			}.start();
 		return isLogado;
 	}
 
@@ -243,7 +323,7 @@ public class Cliente implements Runnable {
 					Log.log(this,"Mensagem vazia de "+nickName,"DEBUG");
 					break;
 				}
-				Log.grava(mens);
+				Log.log(this,"Mens recv: "+mens,"DEBUG");
 				Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss")
 					.excludeFieldsWithoutExposeAnnotation()
 					.create();
@@ -271,13 +351,12 @@ public class Cliente implements Runnable {
 			Log.log(this,"Cliente "+nickName+" desconectando:"+this.getId(),"DEBUG");
 		else
 			Log.log(this,"Cliente desconectando!","DEBUG");
-		for (Conector con : listaConectores) {
-			if (con.getIdConector().equals(getId()) && !con.getTipo().equals(TipoIOT.SERVIDOR)) {
-				Log.log(this,"Removendo conector:"+con.getNome(),"INFO");
-				listaConectores.remove(con);
-				break;
-			}			
+
+		if(conectorCliente!=null){
+			Log.log(this,"Removendo conector:"+conectorCliente.getNome(),"INFO");
+			listaConectores.remove(conectorCliente);
 		}
+				
 		Log.log(this,"Cliente:"+nickName+" deslogado","DEBUG");
 		clientes.remove(this);
 	}

@@ -38,7 +38,7 @@ public class JTableButtonModel extends AbstractTableModel implements TableCellEd
     public String getColumnName(int column) {
         return columns[column];
     }
-    public void newRecordData(String nick,Status stbF,Status stbS,Status stbt ) {
+    public void newRecordData(String nick,Status stbF,Status stbS,Status stbt,String id,String in,String out ) {
         JButton jb = new JButton("Ok");
         jb.addActionListener(this);
         JComboBox<Status> jcbF = new JComboBox<Status>(Status.values());
@@ -48,9 +48,9 @@ public class JTableButtonModel extends AbstractTableModel implements TableCellEd
         JComboBox<Status> jcbT = new JComboBox<Status>(Status.values());
         jcbT.setSelectedItem(stbt);
 
-        Object[] rowl = { new JTextField("1"), 
-                new JTextField("1"), 
-                new JTextField("1"), 
+        Object[] rowl = { new JTextField(id), 
+                new JTextField(in), 
+                new JTextField(out), 
                 new JTextField(nick),
                 jcbF,
                 jcbS, 

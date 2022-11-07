@@ -39,7 +39,8 @@ public enum Status {
 	HOLD(33, "HOLD"),
 	KEY(34, "KEY"),
 	NOTIFICACAO(35, "NOTIFICACAO"),
-	PROCESSARBTN(36, "PROCESSARBTN");
+	PROCESSARBTN(36, "PROCESSARBTN"),
+	COMANDO(36, "COMANDO");
 
 	private final int valor;
 	private final String descricao;

@@ -1,6 +1,7 @@
 package br.com.neuverse.principal;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
@@ -11,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -85,6 +87,14 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
     JFormattedTextField ipLocal = new JFormattedTextField();
     JFormattedTextField tfssid = new JFormattedTextField();
     JFormattedTextField tfssidpassw = new JFormattedTextField();
+
+    JFormattedTextField nome = new JFormattedTextField();
+    JFormattedTextField login = new JFormattedTextField();
+    JFormattedTextField senha = new JFormattedTextField();
+
+    JFormattedTextField tfServidorIOT = new JFormattedTextField();
+    JFormattedTextField tfServidorIOTPorta = new JFormattedTextField();
+
     JButton gravar = new JButton("gravar");
     JButton ler = new JButton("ler");
     JButton acBt = new JButton("+");
@@ -94,10 +104,14 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
     JLabel totBiot = new JLabel();
     JTable tabela;
     RemoteDeviceDiscovery rdd = new RemoteDeviceDiscovery();
+    StreamConnection streamConnection;
+    OutputStream outStream;
+    PrintWriter pWriter;
+    InputStream inStream ;
+    BufferedReader bReader2;
+    boolean blueConectado = false;
 
-    public ConfiguraIOT(){
-        
-        
+    public ConfiguraIOT() {
 
     }
 
@@ -164,6 +178,7 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
             Status funcao, Status status, Status tecla) {
         ButtonIot biot = new ButtonIot();
         biot.setButtonID(id);
+        biot.setNick(nomeGpio);
         biot.setGpioNum(gpioNum);
         biot.setGpioNumControle(gpioNumControle);
         biot.setNomeGpio(nomeGpio);
@@ -205,7 +220,7 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
 
     public void setConfig() {
         try {
-
+            conectarBlue();
             Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
             // HTMLDocument doc = (HTMLDocument) pane.getDocument();
             // String posicao = (String)
@@ -218,14 +233,14 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
             // ControleRest cr = new ControleRest();
             SimpleDateFormat sd = new SimpleDateFormat("ddMMyyyy HH:mm:ss");
             configIOT.setDataAtualizacao(sd.format(new Date()));
-            ComandoIOT com;
-            com = new ComandoIOT();
-            com.setAcao("setConfig");
-            String jSon = gson.toJson(configIOT);
-            // com.setConteudo(jSon);
-            // jSon = gson.toJson(com);
-            // cr.setIp("192.168.10.27");
-            // com = cr.sendRest(jSon);
+            configIOT.setAcao("setConfig");
+            String jSon = gson.toJson(configIOT,ConfigIOT.class);
+            pWriter.write(jSon+"\r");
+            pWriter.flush();
+            String lineRead = bReader2.readLine();
+            System.out.println(lineRead);
+
+
         } catch (Exception e) {
             System.out.println("");
         }
@@ -288,10 +303,29 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
         return Integer.parseInt(jid.getText());
     }
 
+    public void conectarBlue() {
+        if (!blueConectado) {
+            for (RemoteDevice btDevice : rdd.getDevicesDiscovered()) {
+                try {
+                    if (btDevice.getFriendlyName(false).equals("neuverseBTIot")) {
+                        blueIOTDevice = btDevice;
+                        String url = "btspp://" + btDevice.getBluetoothAddress()
+                                + ":1;authenticate=false;encrypt=false;master=false";
+                        streamConnection = (StreamConnection) Connector.open(url);
+                        outStream = streamConnection.openOutputStream();
+                        pWriter = new PrintWriter(new OutputStreamWriter(outStream));
+                        inStream = streamConnection.openInputStream();
+                        bReader2 = new BufferedReader(new InputStreamReader(inStream));
+                        blueConectado = true;
+                        break;
+                    }
+                } catch (Exception e) {
+                }
+            }
+        }
+    }
+
     public void gerarTelaConfig() {
-        
-
-
 
         TableCellRenderer tableRenderer;
         tabela = new JTable(new JTableButtonModel());
@@ -326,8 +360,14 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
         tfssid.setBounds(100, 25, 100, 20);
         lbssidpassw.setBounds(20, 50, 70, 20);
         tfssidpassw.setBounds(100, 50, 100, 20);
-        barraRolagem.setBounds(20, 150, 460, 150);
-        acBt.setBounds(200, 301, 100, 20);
+        tfServidorIOT.setBounds(100, 75, 100, 20);
+        tfServidorIOTPorta.setBounds(210, 75, 50, 20);
+        nome.setBounds(100, 100, 100, 20);
+        login.setBounds(100, 125, 100, 20);
+        senha.setBounds(100, 150, 100, 20);
+
+        barraRolagem.setBounds(20, 175, 460, 150);
+        acBt.setBounds(200, 326, 100, 20);
         pane.setBounds(50, 180, 300, 200);
         gravar.setBounds(150, 400, 100, 20);
         ler.setBounds(250, 400, 100, 20);
@@ -337,7 +377,7 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
         statusConfig.setBackground(Color.GRAY);
         statusConfig.setBorder(BorderFactory.createLineBorder(Color.orange, 2));
         statusConfig.add(statusTxt);
-        
+
         JMenuBar menuBar = new JMenuBar();
         f.setJMenuBar(menuBar);
         JMenu fileMenu = new JMenu("Arquivo");
@@ -352,6 +392,14 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
         JMenuItem copyAction = new JMenuItem("Copy");
         JMenuItem pasteAction = new JMenuItem("Paste");
         JCheckBoxMenuItem checkAction = new JCheckBoxMenuItem("Check Action");
+        JRadioButtonMenuItem radioAction1 = new JRadioButtonMenuItem(
+                "Gravar para IOT");
+        JRadioButtonMenuItem radioAction2 = new JRadioButtonMenuItem(
+                "Gravar para Arquivo");
+        ButtonGroup bg = new ButtonGroup();
+        bg.add(radioAction1);
+        bg.add(radioAction2);
+
         fileMenu.add(newAction);
         fileMenu.add(openAction);
         fileMenu.add(checkAction);
@@ -360,12 +408,18 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
         editMenu.add(cutAction);
         editMenu.add(copyAction);
         editMenu.add(pasteAction);
-        menuBar.setVisible(true);
-
+        editMenu.addSeparator();
+        editMenu.add(radioAction1);
+        editMenu.add(radioAction2);
         f.add(lbssid);
         f.add(tfssid);
         f.add(lbssidpassw);
         f.add(tfssidpassw);
+        f.add(tfServidorIOT);
+        f.add(tfServidorIOTPorta);
+        f.add(nome);
+        f.add(login);
+        f.add(senha);
         f.add(gravar);
         f.add(ler);
         f.add(totBiot);
@@ -377,8 +431,8 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
         rdd.setLabel(statusTxt);
         try {
             rdd.main();
-        } catch (Exception e){
-            
+        } catch (Exception e) {
+
         }
 
         gravar.addActionListener(new ActionListener() {
@@ -388,6 +442,11 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
                 configIOT = new ConfigIOT();
                 configIOT.getSsidSessao().setSsid(tfssid.getText());
                 configIOT.getSsidSessao().setPassword(tfssidpassw.getText());
+                configIOT.getServidorSessao().setEndereco(tfServidorIOT.getText());
+                configIOT.getServidorSessao().setPorta(Integer.parseInt(tfServidorIOTPorta.getText()));
+                configIOT.getConectorSessao().setNome(nome.getText());
+                configIOT.getConectorSessao().setUsuario(login.getText());
+                configIOT.getConectorSessao().setSenha(senha.getText());
                 JTableButtonModel modelo = (JTableButtonModel) tabela.getModel();
                 for (Object obj[] : modelo.getRows()) {
                     JTextField nick = (JTextField) obj[3];
@@ -402,7 +461,6 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
                     configIOT.getButtonIOTSessao().add(bIot);
                 }
                 setConfig();
-                System.out.println(serviceFound.size());
             }
         });
 
@@ -419,64 +477,55 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
         ler.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                for (RemoteDevice btDevice : rdd.getDevicesDiscovered()) {
+                conectarBlue();
+                if (blueConectado) {
                     try {
-                        if (btDevice.getFriendlyName(false).equals("neuverseBTIot")) {
-                            blueIOTDevice = btDevice;
-                            new Thread() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        String url = "btspp://" + btDevice.getBluetoothAddress()
-                                                + ":1;authenticate=false;encrypt=false;master=false";
-                                        StreamConnection streamConnection = (StreamConnection) Connector.open(url);
-                                        OutputStream outStream = streamConnection.openOutputStream();
-                                        PrintWriter pWriter = new PrintWriter(new OutputStreamWriter(outStream));
-                                        ConfigIOT confIOT = new ConfigIOT();
-                                        Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-                                        configIOT.setAcao("retConfig");
-                                        String jSon= gson.toJson(configIOT,ConfigIOT.class);
-                                        pWriter.write(jSon);
-                                        pWriter.flush();
-                                        InputStream inStream = streamConnection.openInputStream();
-                                        BufferedReader bReader2 = new BufferedReader(new InputStreamReader(inStream));
-                                        String lineRead = bReader2.readLine();
-                                        System.out.println(lineRead);
-                                        configIOT = gson.fromJson(lineRead, ConfigIOT.class);
-                                       if(configIOT.getSsidSessao()!=null){
-                                            tfssid.setText(configIOT.getSsidSessao().getSsid());
-                                            tfssidpassw.setText(configIOT.getSsidSessao().getPassword());    
-                                       }
-                                       if(configIOT.getButtonIOTSessao()!=null){
-                                            for(ButtonIot bIot : configIOT.getButtonIOTSessao()){
-                                                JTableButtonModel modelo = (JTableButtonModel) tabela.getModel();
-                                                
-                                                if(bIot.getFuncao()!=null&&bIot.getStatus()!=null&&bIot.getTecla()!=null
-                                                    &&bIot.getButtonID()!=null){
-                                                    if(bIot.getNick()!=null)
-                                                        modelo.newRecordData(bIot.getNick(),bIot.getFuncao(),bIot.getStatus(),bIot.getTecla());
-                                                    else if(bIot.getNomeGpio()!=null)
-                                                        modelo.newRecordData(bIot.getNomeGpio(),bIot.getFuncao(),bIot.getStatus(),bIot.getTecla());
-                                                }
-                                                modelo.fireTableDataChanged();
-                                            }
-
-                                       }
-                                        
-
-                                    } catch (Exception e) {
-                                        statusTxt.setText(e.getMessage());
-                                    }
-                                }
-                            }.start();
+                        ConfigIOT confIOT = new ConfigIOT();
+                        Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                        configIOT.setAcao("retConfig");
+                        String jSon = gson.toJson(configIOT, ConfigIOT.class);
+                        pWriter.write(jSon+"\r");
+                        pWriter.flush();
+						String lineRead = bReader2.readLine();
+                        System.out.println(lineRead);
+                        configIOT = gson.fromJson(lineRead, ConfigIOT.class);
+                        if (configIOT.getSsidSessao() != null) {
+                            tfssid.setText(configIOT.getSsidSessao().getSsid());
+                            tfssidpassw.setText(configIOT.getSsidSessao().getPassword());
+                            tfServidorIOT.setText(configIOT.getServidorSessao().getEndereco());
+                            tfServidorIOTPorta.setText(String.valueOf(configIOT.getServidorSessao().getPorta()));
+                            nome.setText(configIOT.getConectorSessao().getNome());
+                            login.setText(configIOT.getConectorSessao().getUsuario());
+                            senha.setText(configIOT.getConectorSessao().getSenha());
                         }
-                    } catch (IOException e1) {
+                        if (configIOT.getButtonIOTSessao() != null) {
+                            for (ButtonIot bIot : configIOT.getButtonIOTSessao()) {
+                                JTableButtonModel modelo = (JTableButtonModel) tabela.getModel();
+
+                                if (bIot.getFuncao() != null && bIot.getStatus() != null
+                                        && bIot.getTecla() != null
+                                        && bIot.getButtonID() != null && bIot.getGpioNum() != null
+                                        && bIot.getGpioNumControle() != null) {
+                                    if (bIot.getNick() != null)
+                                        modelo.newRecordData(bIot.getNick(), bIot.getFuncao(),
+                                                bIot.getStatus(), bIot.getTecla(),
+                                                String.valueOf(bIot.getButtonID()),
+                                                String.valueOf(bIot.getGpioNumControle()),
+                                                String.valueOf(bIot.getGpioNum()));
+                                    else if (bIot.getNomeGpio() != null)
+                                        modelo.newRecordData(bIot.getNomeGpio(), bIot.getFuncao(),
+                                                bIot.getStatus(), bIot.getTecla(),
+                                                String.valueOf(bIot.getButtonID()),
+                                                String.valueOf(bIot.getGpioNumControle()),
+                                                String.valueOf(bIot.getGpioNum()));
+                                }
+                                modelo.fireTableDataChanged();
+                            }
+                        }
+                    } catch (Exception e1) {
+
                     }
                 }
-
-                // retConfig();
-
-                // tfssid.setText((String)tableModel.getValueAt(0, 0));
             }
         });
     }
@@ -575,3 +624,4 @@ class JTableButtonRenderer implements TableCellRenderer {
         return defaultRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
     }
 }
+

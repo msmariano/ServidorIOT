@@ -394,17 +394,28 @@ public class ServidorRest implements HttpHandler {
             }
             else if(uri.getPath().equals("/ServidorIOT/comando")){
                 try{
-                    Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                     Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                     Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
-               
+                    
+                    Log.log(this, "Plug "+ plug.getNome(), "DEBUG");
+                    for(Conector con :listaConectores){
+                        Log.log(this, "Conector "+ con.getNome(), "DEBUG");
+                    }
+
                     for(Conector con :listaConectores){
                         if(con.getNome().equals(plug.getNome())){
-                            Log.log(this,"comando encontrou "+plug.getNome(),"INFO");
+                            int tDevice = 0;
+                            if(con.getDevices()==null)
+                                tDevice = 0;
+                            else
+                                tDevice = con.getDevices().size();
+                            Log.log(this,"comando encontrou "+plug.getNome()+" com "+tDevice+" devices","INFO");
                             Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
                             List<ButtonIot> listaBiot = gson.fromJson(plug.getIot().getjSon(),listType);
                             for (ButtonIot buttonIot : listaBiot) {
                                 for(Device device : con.getDevices()) {
                                     if(device.getId().equals(buttonIot.getButtonID())){
+                                        Log.log(this,"Comando encontrou device: "+buttonIot.getNick(),"DEBUG");
                                         if(buttonIot.getStatus().equals(Status.ON)){
                                             device.on();
                                         } 
