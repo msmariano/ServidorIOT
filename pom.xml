@@ -5,7 +5,7 @@
 	<groupId>ServidorIOT</groupId>
 	<artifactId>ServidorIOT</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<build>
 		<finalName>ServidorIOT</finalName>
 		<sourceDirectory>src</sourceDirectory>
@@ -16,6 +16,11 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
+					<archive>
+						<manifest>
+							<mainClass>br.com.neuverse.principal.Main</mainClass>
+						</manifest>
+					</archive>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -28,15 +33,11 @@
 		</plugins>
 	</build>
 	<dependencies>
-
-
 		<dependency>
 			<groupId>com.pi4j</groupId>
 			<artifactId>pi4j-core</artifactId>
-		   <version>1.2</version>
+			<version>1.2</version>
 		</dependency>
-
-
 		<!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
@@ -50,8 +51,6 @@
 			<artifactId>bluecove</artifactId>
 			<version>2.1.1</version>
 		</dependency>
-
-		
 
 
 		<dependency>
@@ -88,11 +87,11 @@
 		</dependency>
 
 		<dependency>
-		    <groupId>org.xerial</groupId>
-		    <artifactId>sqlite-jdbc</artifactId>
-		    <version>3.25.2</version>
+			<groupId>org.xerial</groupId>
+			<artifactId>sqlite-jdbc</artifactId>
+			<version>3.25.2</version>
 		</dependency>
-	
+
 
 		<dependency>
 			<groupId>asm</groupId>
@@ -125,10 +124,6 @@
 			<artifactId>jersey-json</artifactId>
 			<version>1.19.4</version>
 		</dependency>
-
-
-
-
 
 
 	</dependencies>

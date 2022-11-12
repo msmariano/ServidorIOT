@@ -394,12 +394,12 @@ public class ServidorRest implements HttpHandler {
             }
             else if(uri.getPath().equals("/ServidorIOT/comando")){
                 try{
-                     Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                    Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                     Conector plug = gson.fromJson(requestContent.toString(), Conector.class);
                     
                     Log.log(this, "Plug "+ plug.getNome(), "DEBUG");
                     for(Conector con :listaConectores){
-                        Log.log(this, "Conector "+ con.getNome(), "DEBUG");
+                        Log.log(this, "Conector jSon "+ requestContent.toString(), "DEBUG");
                     }
 
                     for(Conector con :listaConectores){
@@ -413,25 +413,27 @@ public class ServidorRest implements HttpHandler {
                             Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
                             List<ButtonIot> listaBiot = gson.fromJson(plug.getIot().getjSon(),listType);
                             for (ButtonIot buttonIot : listaBiot) {
-                                for(Device device : con.getDevices()) {
-                                    if(device.getId().equals(buttonIot.getButtonID())){
-                                        Log.log(this,"Comando encontrou device: "+buttonIot.getNick(),"DEBUG");
-                                        if(buttonIot.getStatus().equals(Status.ON)){
-                                            device.on();
-                                        } 
-                                        else if(buttonIot.getStatus().equals(Status.OFF)){
-                                            device.off();
-                                        } 
-                                        else if(buttonIot.getStatus().equals(Status.PUSH)){
-                                            if(device.getStatus().equals(Status.ON)){
-                                                device.off();    
+                                if(buttonIot.getSelecionado()!=null&&buttonIot.getSelecionado()){
+                                    for(Device device : con.getDevices()) {
+                                        if(device.getId().equals(buttonIot.getButtonID())){
+                                            Log.log(this,"Comando encontrou device: "+buttonIot.getNick(),"DEBUG");
+                                            if(buttonIot.getStatus().equals(Status.ON)){
+                                                device.on();
+                                            } 
+                                            else if(buttonIot.getStatus().equals(Status.OFF)){
+                                                device.off();
+                                            } 
+                                            else if(buttonIot.getStatus().equals(Status.PUSH)){
+                                                if(device.getStatus().equals(Status.ON)){
+                                                    device.off();    
+                                                }
+                                                else
+                                                    device.on();    
                                             }
-                                            else
-                                                device.on();    
-                                        } 
+                                            break; 
+                                        }
                                     }
                                 }
-
                             }
                         }
                     }

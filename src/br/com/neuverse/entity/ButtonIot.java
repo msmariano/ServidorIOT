@@ -26,6 +26,34 @@ public class ButtonIot {
 	private String ip;
 	@Expose(serialize = true)
 	private String nick;
+	@Expose(serialize = true)
+	private Boolean selecionado;
+	private String sParam;
+	private String iParam;
+	
+	public String getiParam() {
+		return iParam;
+	}
+
+	public void setiParam(String iParam) {
+		this.iParam = iParam;
+	}
+
+	public String getsParam() {
+		return sParam;
+	}
+
+	public void setsParam(String sParam) {
+		this.sParam = sParam;
+	}
+
+	public Boolean getSelecionado() {
+		return selecionado;
+	}
+
+	public void setSelecionado(Boolean selecionado) {
+		this.selecionado = selecionado;
+	}
 
 	public String getNick() {
 		return nick;

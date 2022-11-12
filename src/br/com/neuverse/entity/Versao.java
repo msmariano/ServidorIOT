@@ -3,8 +3,9 @@ package br.com.neuverse.entity;
 import java.util.Date;
 
 public class Versao {
-    static final String versao = "1.0.14";
-    static final String data = "27/10/2022 09:00";
+    static final String versao = "1.0.21";
+    static final String data = "10/11/2022 23:25";
+    static final String backlog = "Inserido controle de selecao de botaoIOT.";
     public Versao(){
         upDate = new Date();
     }

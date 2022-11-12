@@ -1,9 +1,11 @@
 package br.com.neuverse.principal;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -56,6 +58,15 @@ public class Main {
 	private InfoServidor infoServidor = new InfoServidor();
 	private Conector conector;
 	private Versao ver = new Versao();
+	private List<Terminal> terminais = new ArrayList<>();
+
+	public List<Terminal> getTerminais() {
+		return terminais;
+	}
+
+	public void setTerminais(List<Terminal> terminais) {
+		this.terminais = terminais;
+	}
 
 	public static void main(String[] args) throws IOException, SQLException {
 
@@ -293,16 +304,29 @@ public class Main {
 							public void run(){
 								try{
 									Socket s = socketLog;
-									BufferedReader entradalog = new BufferedReader(
-										new InputStreamReader(s.getInputStream()));
-									while(true){
-										String mens = entradalog.readLine();
-										if(mens.equals("")){
-											logSocket.remove(s);
-											s.close();
-											break;
-										}
+									Terminal terminal = new Terminal();
+									terminal.setSocket(socketLog);
+									terminais.add(terminal);
+									BufferedWriter saida;
+									try {
+										saida = new BufferedWriter(new OutputStreamWriter(socketLog.getOutputStream()));
+										saida.write("Bem vindo ao ServidorIOT!" + "\r\n");
+										Versao ver = new Versao();
+										saida.write(ver.ver() + "\r\n");										
+										String processName =
+            								java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+										Long pid = Long.parseLong(processName.split("@")[0]);
+										Long upt = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();                    
+										terminal.setPid(pid);
+										saida.write(processName + "\r\n");
+										saida.write("PID:"+String.valueOf(pid) + "\r\n");
+										saida.write(String.valueOf(upt) + "\r\n");
+										saida.flush();
+									} catch (IOException e) {
 									}
+									terminal.executar();
+									logSocket.remove(s);
+									terminais.remove(terminal);
 								}
 								catch(Exception e){
 								}
