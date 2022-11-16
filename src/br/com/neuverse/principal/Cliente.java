@@ -229,7 +229,6 @@ public class Cliente implements Runnable {
 			} else {
 				listaConectores.addAll(conector.getConectores());
 			}
-			Log.log(this, "Inserindo " + nickName, "DEBUG");
 			if (!conector.getTipo().equals(TipoIOT.NETWORK)) 
 				listaConectores.add(conector);
 			conectorCliente = conector;
