@@ -225,29 +225,31 @@ public class Main {
 				}.start();
 			}		
 			@Override
-			public void run() {				
-				try {
-					//SSLContext sslContext = buildSslContext(new FileInputStream("/home/pi/Desktop/servidoriotssl.pem"));
-					//SSLSocketFactory factory =sslContext.getSocketFactory();
-					//SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
-					//socket.startHandshake();	
-					Socket socket = new Socket("192.168.10.254", 27016);				
-					cliente.setSocketCliente(socket);
-					Gson gson = new GsonBuilder()
-						.setDateFormat("dd/MM/yyyy HH:mm:ss")
-						.excludeFieldsWithoutExposeAnnotation()
-						.create();
-					String textJson = gson.toJson(networkConector);
-					PrintWriter out = new PrintWriter(
-						new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-					out.println(textJson);
-					//alive();
-					cliente.run();		
-				}
-				catch (Exception e) {
-					Log.log(this,e.getMessage(),"DEBUG");
-				}
-							
+			public void run() {
+				while (true) {
+					try {
+						//SSLContext sslContext = buildSslContext(new FileInputStream("/home/pi/Desktop/servidoriotssl.pem"));
+						//SSLSocketFactory factory =sslContext.getSocketFactory();
+                        //SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
+						//socket.startHandshake();	
+						Socket socket = new Socket("192.168.10.254", 27016);				
+						cliente.setSocketCliente(socket);
+						Gson gson = new GsonBuilder()
+							.setDateFormat("dd/MM/yyyy HH:mm:ss")
+							.excludeFieldsWithoutExposeAnnotation()
+							.create();
+                        String textJson = gson.toJson(networkConector);
+						PrintWriter out = new PrintWriter(
+                        	new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+                        out.println(textJson);
+						//alive();
+                       	cliente.run();		
+						Thread.sleep(10000);									
+					}
+					catch (Exception e) {
+						Log.log(this,e.getMessage(),"DEBUG");
+					}
+				}				
 			}		
 		}.start();			
 	}

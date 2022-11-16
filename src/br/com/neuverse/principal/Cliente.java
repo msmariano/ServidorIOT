@@ -71,6 +71,9 @@ public class Cliente implements Runnable {
 			case LOGIN:
 				processarLogin(con);
 				break;
+			case LOGIN_OK:
+				isLogado = true;
+				break;
 			case LOGINWITHCOMMAND:
 				processarLoginWithCommand(con);
 				break;

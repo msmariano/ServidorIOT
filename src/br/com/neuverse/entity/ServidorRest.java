@@ -403,7 +403,7 @@ public class ServidorRest implements HttpHandler {
                     }
 
                     for(Conector con :listaConectores){
-                        if(con.getNome().equals(plug.getNome())){
+                        if(con.getIdConector().equals(plug.getIdConector())){
                             int tDevice = 0;
                             if(con.getDevices()==null)
                                 tDevice = 0;
