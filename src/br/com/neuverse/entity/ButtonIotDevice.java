@@ -47,7 +47,7 @@ public class ButtonIotDevice extends Device {
     }
 
     @Override
-    boolean on() {
+    public boolean on() {
         bIot.setStatus(Status.ON);
         conector.setStatus(Status.PROCESSARBTN);
         String jSon = gson.toJson(conector,Conector.class);
@@ -81,7 +81,7 @@ public class ButtonIotDevice extends Device {
     }
 
     @Override
-    boolean off() {
+    public boolean off() {
         bIot.setStatus(Status.OFF);
         conector.setStatus(Status.PROCESSARBTN);
         String jSon = gson.toJson(conector,Conector.class);
@@ -90,7 +90,7 @@ public class ButtonIotDevice extends Device {
     }
 
     @Override
-    Status getStatus() {
+    public Status getStatus() {
         return bIot.getStatus();
     }
 

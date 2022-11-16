@@ -17,7 +17,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.lang.reflect.Type;
@@ -30,6 +29,7 @@ import br.com.neuverse.entity.ButtonGpioRaspPi;
 import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.ButtonIotDevice;
 import br.com.neuverse.entity.Conector;
+import br.com.neuverse.entity.Device;
 import br.com.neuverse.entity.Mensagem;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
@@ -38,7 +38,7 @@ public class Cliente implements Runnable {
 
 	private Socket socketCliente;
 	private List<Conector> listaConectores;
-	private List<ButtonGpioRaspPi>	listaGpioButtons;
+	private List<ButtonGpioRaspPi> listaGpioButtons;
 	private List<Cliente> clientes;
 	private String id;
 	public BufferedReader entrada;
@@ -47,13 +47,20 @@ public class Cliente implements Runnable {
 	private Boolean isLogado = false;
 	private Conector conectorCliente;
 	private LocalDateTime timeAlive;
+	private Boolean isAlive = false;
 
-	public void processar(Conector con) throws IOException, SQLException{
-		switch(con.getStatus()) {
+	public void processar(Conector con) throws IOException, SQLException {
+		switch (con.getStatus()) {
 			case ALIVE:
 				processarAlive(con);
 				break;
+			case CONECTADO:
+				isAlive = true;
+				break;
 			case COMANDO:
+				break;
+			case PROCESSARBTN:
+				processarBTN(con);
 				break;
 			case CONTROLLERCOMMAND:
 				processarControllerCommand(con);
@@ -68,95 +75,95 @@ public class Cliente implements Runnable {
 				processarLoginWithCommand(con);
 				break;
 			default:
-				break;			
+				break;
 		}
 	}
 
-	public void processarNotificar(Conector con){
-		Log.log(this,"NOTIFICACAO ","DEBUG");
+	public void processarNotificar(Conector con) {
+		Log.log(this, "NOTIFICACAO ", "DEBUG");
 		conectorCliente.setStatus(Status.NOTIFICACAO);
-		for(ButtonIot b : con.getButtons()){
-			for(ButtonIot bOwn : conectorCliente.getButtons()){
-				if(bOwn.getButtonID().equals(b.getButtonID())){
-					bOwn.setStatus(b.getStatus());	
+		for (ButtonIot b : con.getButtons()) {
+			for (ButtonIot bOwn : conectorCliente.getButtons()) {
+				if (bOwn.getButtonID().equals(b.getButtonID())) {
+					bOwn.setStatus(b.getStatus());
 				}
 			}
 		}
-		Log.log(this,"atualizando status device","DEBUG");
-        if(clientes!=null){
-            try {
-                for(Cliente cliente : clientes){
-                    if(cliente.getIsLogado()){
-                        Log.log(cliente,"["+cliente.getNickName()+"]enviando atualizacao de status","DEBUG");
-                        cliente.enviarAtualizar(con);
-                    }                    
-                }
-            } catch (Exception e) {  
-                Log.log(this,"atualizar()"+e.getMessage(),"DEBUG");              
-            }
-        }
+		Log.log(this, "atualizando status device", "DEBUG");
+		if (clientes != null) {
+			try {
+				for (Cliente cliente : clientes) {
+					if (cliente.getIsLogado()) {
+						Log.log(cliente, "[" + cliente.getNickName() + "]enviando atualizacao de status", "DEBUG");
+						cliente.enviarAtualizar(con);
+					}
+				}
+			} catch (Exception e) {
+				Log.log(this, "atualizar()" + e.getMessage(), "DEBUG");
+			}
+		}
 	}
 
 	public void processarControllerCommand(Conector conector) {
-		if(!isLogado){
+		if (!isLogado) {
 			try {
-				if(!socketCliente.isClosed())
+				if (!socketCliente.isClosed())
 					socketCliente.close();
-				return ;
+				return;
 			} catch (IOException e) {
 			}
 		}
 		for (Conector con : listaConectores) {
 			if (conector.getIdConector().equals(con.getIdConector())) {
-				List<ButtonIot> listaBiot = gerarBtns(con.getIot().getjSon());								
-				for(ButtonIot biot : listaBiot){
+				List<ButtonIot> listaBiot = gerarBtns(con.getIot().getjSon());
+				for (ButtonIot biot : listaBiot) {
 					switch (con.getIot().getTipoIOT()) {
-						case RASPBERRYGPIO:							
-								for(ButtonGpioRaspPi bgrp : listaGpioButtons){	
-									if(biot.getButtonID() == bgrp.getId()){
-										if(biot.getStatus() == Status.ON) {
-											bgrp.ligar();									}
+						case RASPBERRYGPIO:
+							for (ButtonGpioRaspPi bgrp : listaGpioButtons) {
+								if (biot.getButtonID() == bgrp.getId()) {
+									if (biot.getStatus() == Status.ON) {
+										bgrp.ligar();
 									}
-									else {
-										bgrp.desligar();
-									}						
-								}													
+								} else {
+									bgrp.desligar();
+								}
+							}
 							break;
 						case CONTROLEREMOTO:
 							break;
 						default:
 							break;
 					}
-				}	
+				}
 				break;
-			}			
-		}		
+			}
+		}
 	}
 
-	public boolean validarLogin(Conector con){
+	public boolean validarLogin(Conector con) {
 		Usuario usuario;
 		try {
 			usuario = new Usuario();
 			usuario.setSenha(convertPasswordToMD5(con.getSenha()));
 			return usuario.retornaUsuario(con.getUsuario(), usuario.getSenha());
 		} catch (Exception e) {
-			
+
 		}
 		return false;
 	}
 
-	public void processarLoginWithCommand(Conector conector){
+	public void processarLoginWithCommand(Conector conector) {
 		try {
 			processarLogin(conector);
 		} catch (SQLException e) {
 		}
-		if(isLogado) {	
-			processarControllerCommand(conector);		
-		}		
+		if (isLogado) {
+			processarControllerCommand(conector);
+		}
 	}
 
-	public void processarAlive(Conector conector){		
-		if(validarLogin(conector)){
+	public void processarAlive(Conector conector) {
+		if (validarLogin(conector)) {
 			new Thread() {
 				@Override
 				public void run() {
@@ -173,15 +180,14 @@ public class Cliente implements Runnable {
 					Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 					String jSon = gson.toJson(conector);
 					println(jSon);
-					Log.log(this,"Alive:"+conector.getNome()+" "+conector.getMens().getMens(),"INFO");
+					Log.log(this, "Alive:" + conector.getNome() + " " + conector.getMens().getMens(), "INFO");
 					timeAlive = LocalDateTime.now();
 				}
 			}.start();
-		} else
-		{
-			Log.log(this,"Desconectado login invalido Alive","DEBUG");
+		} else {
+			Log.log(this, "Desconectado login invalido Alive", "DEBUG");
 			try {
-				if(!socketCliente.isClosed())
+				if (!socketCliente.isClosed())
 					socketCliente.close();
 			} catch (IOException e) {
 			}
@@ -194,48 +200,53 @@ public class Cliente implements Runnable {
 		return String.format("%32x", hash);
 	}
 
-	public Boolean processarLogin(Conector conector) throws SQLException{	
-		Log.log(this,"Processando login "+conector.getNome(),"DEBUG");			
+	public Boolean processarLogin(Conector conector) throws SQLException {
+		Log.log(this, "Processando login " + conector.getNome(), "DEBUG");
 		Gson gson = new GsonBuilder()
-			.setDateFormat("dd/MM/yyyy HH:mm:ss")
-			.excludeFieldsWithoutExposeAnnotation()
-			.create();
+				.setDateFormat("dd/MM/yyyy HH:mm:ss")
+				.excludeFieldsWithoutExposeAnnotation()
+				.create();
 		Usuario usuario = new Usuario();
 		try {
 			usuario.setSenha(convertPasswordToMD5(conector.getSenha()));
-		} catch (NoSuchAlgorithmException e1) {			
+		} catch (NoSuchAlgorithmException e1) {
 		}
 		usuario.setUsuario(conector.getUsuario());
 		isLogado = usuario.obterPorUsuarioSenha();
-		if(isLogado) {
-			Log.log(this,"login com sucesso! "+conector.getNome(),"DEBUG");	
-			Log.log(this,"Removendo conector anterior se existir ","DEBUG");			
-			for(Conector con : listaConectores){
-				if(con.getNome().equals(conector.getNome())){
-					listaConectores.remove(con);
-					break;
+		if (isLogado) {
+			Log.log(this, "login com sucesso! " + conector.getNome(), "DEBUG");
+			if (!conector.getTipo().equals(TipoIOT.NETWORK)) {
+				Log.log(this, "Removendo conector anterior se existir ", "DEBUG");
+				for (Conector con : listaConectores) {
+					if (con.getNome().equals(conector.getNome())) {
+						listaConectores.remove(con);
+						break;
+					}
 				}
+			} else {
+				listaConectores.addAll(conector.getConectores());
 			}
-			Log.log(this,"Inserindo "+nickName,"DEBUG");
+			Log.log(this, "Inserindo " + nickName, "DEBUG");
 			listaConectores.add(conector);
 			conectorCliente = conector;
 			conector.setStatus(Status.LOGIN_OK);
 			this.nickName = conector.getNome();
 			List<String> iots = new ArrayList<String>();
 			for (Conector con : listaConectores) {
-				if(con.getIot()!=null)
+				if (con.getIot() != null)
 					iots.add(con.getIot().getName());
 			}
 			conector.setIots(iots);
 			UUID uniqueKey = UUID.randomUUID();
 			conector.setIdConector(uniqueKey.toString());
-			id = uniqueKey.toString();									
-			Log.log(this,"Cliente:"+nickName+" logado","DEBUG");
-			if(conector.getTipo()!=null&&!conector.getTipo().equals(TipoIOT.HUMAN)) {
-			    conector.setDevices(new ArrayList<>());
-				for(ButtonIot bIot : conector.getButtons()){
-					if(bIot.getNick()==null){
-						if(bIot.getNomeGpio()!=null){
+			id = uniqueKey.toString();
+			Log.log(this, "Cliente:" + nickName + " logado", "DEBUG");
+			if (conector.getTipo() != null && !conector.getTipo().equals(TipoIOT.HUMAN)
+					&& !conector.getTipo().equals(TipoIOT.NETWORK)) {
+				conector.setDevices(new ArrayList<>());
+				for (ButtonIot bIot : conector.getButtons()) {
+					if (bIot.getNick() == null) {
+						if (bIot.getNomeGpio() != null) {
 							bIot.setNick(bIot.getNomeGpio());
 						}
 					}
@@ -243,44 +254,58 @@ public class Cliente implements Runnable {
 					bIotDevice.setSocket(socketCliente);
 					bIotDevice.setbIot(bIot);
 					bIotDevice.setClientes(clientes);
-					bIotDevice.toDo(conector);					
-					conector.getDevices().add(bIotDevice);	
+					bIotDevice.toDo(conector);
+					conector.getDevices().add(bIotDevice);
+				}
+			} else {
+				for (Conector con : conector.getConectores()) {
+					con.setDevices(new ArrayList<>());
+					for (ButtonIot bIot : con.getButtons()) {
+						if (bIot.getNick() == null) {
+							if (bIot.getNomeGpio() != null) {
+								bIot.setNick(bIot.getNomeGpio());
+							}
+						}
+						ButtonIotDevice bIotDevice = new ButtonIotDevice();
+						bIotDevice.setSocket(socketCliente);
+						bIotDevice.setbIot(bIot);
+						bIotDevice.setClientes(clientes);
+						bIotDevice.toDo(con);
+						conector.getDevices().add(bIotDevice);
+					}
 				}
 			}
-		}
-		else {
+		} else {
 			conector.setStatus(Status.LOGIN_FAIL);
 		}
-		try{		
+		try {
 			String jSon = gson.toJson(conector);
 			println(jSon);
-		}
-		catch(Exception e){
+		} catch (Exception e) {
 			Log.log(this, e.getMessage(), "DEBUG");
 		}
-		if(!isLogado){
+		if (!isLogado) {
 			try {
-				if(!socketCliente.isClosed())
+				if (!socketCliente.isClosed())
 					socketCliente.close();
 			} catch (IOException e) {
-			}		
-		}
-		else{
+			}
+		} else {
 			timeAlive = LocalDateTime.now();
-			if(conector.getTipo()!=null&&!conector.getTipo().equals(TipoIOT.HUMAN)){
+			if (conector.getTipo() != null && !conector.getTipo().equals(TipoIOT.HUMAN)) {
 				new Thread() {
 					@Override
 					public void run() {
 						try {
-							while(true){
-								Thread.sleep(1000*40);
-								if(timeAlive.isBefore(LocalDateTime.now().minusSeconds(30))){
+							while (true) {
+								Thread.sleep(1000 * 40);
+								if (timeAlive.isBefore(LocalDateTime.now().minusSeconds(30))) {
 									try {
-										Log.log(this,"timeout alive","DEBUG");
-										if(!socketCliente.isClosed())
+										Log.log(this, "timeout alive", "DEBUG");
+										if (!socketCliente.isClosed())
 											socketCliente.close();
 										break;
-									} catch (IOException e) {									
+									} catch (IOException e) {
 									}
 								}
 							}
@@ -297,50 +322,50 @@ public class Cliente implements Runnable {
 	public void run() {
 		try {
 			entrada = new BufferedReader(new InputStreamReader(socketCliente.getInputStream(),
-				StandardCharsets.UTF_8.name()));
+					StandardCharsets.UTF_8.name()));
 			while (true) {
 				String mens = entrada.readLine();
-				if (mens == null){
-					Log.log(this,"Mensagem vazia de "+nickName,"DEBUG");
+				if (mens == null) {
+					Log.log(this, "Mensagem vazia de " + nickName, "DEBUG");
 					break;
 				}
-				Log.log(this,"Mens recv: "+mens,"DEBUG");
+				Log.log(this, "Mens recv: " + mens, "DEBUG");
 				Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss")
-					.excludeFieldsWithoutExposeAnnotation()
-					.create();
+						.excludeFieldsWithoutExposeAnnotation()
+						.create();
 				try {
-					if(!mens.equals("")) {
+					if (!mens.equals("")) {
 						Conector conector = gson.fromJson(mens, Conector.class);
 						processar(conector);
-						if(!isLogado)
+						if (!isLogado)
 							break;
 					}
 				} catch (Exception e) {
-					Log.log(this,"mensagem invalida:"+e.getMessage(),"DEBUG");
-					if(!socketCliente.isClosed())
+					Log.log(this, "mensagem invalida:" + e.getMessage(), "DEBUG");
+					if (!socketCliente.isClosed())
 						socketCliente.close();
 					break;
 				}
 			}
 		} catch (Exception e) {
 			try {
-				Log.log(this,"Exception_1:"+e.getMessage(),"ERROR");
-				if(!socketCliente.isClosed())
+				Log.log(this, "Exception_1:" + e.getMessage(), "ERROR");
+				if (!socketCliente.isClosed())
 					socketCliente.close();
 			} catch (IOException e1) {
 			}
-		}		
-		if(this.getId()!=null)
-			Log.log(this,"Cliente "+nickName+" desconectando:"+this.getId(),"DEBUG");
+		}
+		if (this.getId() != null)
+			Log.log(this, "Cliente " + nickName + " desconectando:" + this.getId(), "DEBUG");
 		else
-			Log.log(this,"Cliente desconectando!","DEBUG");
+			Log.log(this, "Cliente desconectando!", "DEBUG");
 
-		if(conectorCliente!=null){
-			Log.log(this,"Removendo conector:"+conectorCliente.getNome(),"INFO");
+		if (conectorCliente != null) {
+			Log.log(this, "Removendo conector:" + conectorCliente.getNome(), "INFO");
 			listaConectores.remove(conectorCliente);
 		}
-				
-		Log.log(this,"Cliente:"+nickName+" deslogado","DEBUG");
+
+		Log.log(this, "Cliente:" + nickName + " deslogado", "DEBUG");
 		clientes.remove(this);
 	}
 
@@ -348,10 +373,10 @@ public class Cliente implements Runnable {
 		BufferedWriter saida;
 		try {
 			saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
-			saida.write(mens+"\r\n");
+			saida.write(mens + "\r\n");
 			saida.flush();
 		} catch (IOException e) {
-			Log.log(this, "enviar "+nickName+" "+e.getMessage(), "DEBUG");
+			Log.log(this, "enviar " + nickName + " " + e.getMessage(), "DEBUG");
 		}
 	}
 
@@ -362,7 +387,50 @@ public class Cliente implements Runnable {
 			saida.write(mens);
 			saida.flush();
 		} catch (IOException e) {
-			Log.log(this, "enviar "+nickName+" "+e.getMessage(), "DEBUG");
+			Log.log(this, "enviar " + nickName + " " + e.getMessage(), "DEBUG");
+		}
+	}
+
+	public void processarBTN(Conector plug) {
+		try {
+			Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
+				.setDateFormat("dd/MM/yyyy HH:mm:ss")
+				.create();
+			for (Conector con : listaConectores) {
+				if (con.getNome().equals(plug.getNome())) {
+					int tDevice = 0;
+					if (con.getDevices() == null)
+						tDevice = 0;
+					else
+						tDevice = con.getDevices().size();
+					Log.log(this, "comando encontrou " + plug.getNome() + " com " + tDevice + " devices", "INFO");
+					Type listType = new TypeToken<ArrayList<ButtonIot>>() {
+					}.getType();
+					List<ButtonIot> listaBiot = gson.fromJson(plug.getIot().getjSon(), listType);
+					for (ButtonIot buttonIot : listaBiot) {
+						if (buttonIot.getSelecionado() != null && buttonIot.getSelecionado()) {
+							for (Device device : con.getDevices()) {
+								if (device.getId().equals(buttonIot.getButtonID())) {
+									Log.log(this, "Comando encontrou device: " + buttonIot.getNick(), "DEBUG");
+									if (buttonIot.getStatus().equals(Status.ON)) {
+										device.on();
+									} else if (buttonIot.getStatus().equals(Status.OFF)) {
+										device.off();
+									} else if (buttonIot.getStatus().equals(Status.PUSH)) {
+										if (device.getStatus().equals(Status.ON)) {
+											device.off();
+										} else
+											device.on();
+									}
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+
+		} catch (Exception e) {
 		}
 	}
 
@@ -419,8 +487,9 @@ public class Cliente implements Runnable {
 
 	public List<ButtonIot> gerarBtns(String jSon) {
 		Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-		Type listType = new TypeToken<ArrayList<ButtonIot>>(){}.getType();
-		List<ButtonIot> listaBiot = gson.fromJson(jSon, listType );
+		Type listType = new TypeToken<ArrayList<ButtonIot>>() {
+		}.getType();
+		List<ButtonIot> listaBiot = gson.fromJson(jSon, listType);
 		return listaBiot;
 	}
 
@@ -474,8 +543,17 @@ public class Cliente implements Runnable {
 		this.nomeIotCliente = nomeIotCliente;
 	}
 
-	public void comando(List<Conector> lista){
+	public void comando(List<Conector> lista) {
 
 	}
+
+	public Boolean getIsAlive() {
+		return isAlive;
+	}
+
+	public void setIsAlive(Boolean isAlive) {
+		this.isAlive = isAlive;
+	}
+
 
 }

@@ -124,13 +124,13 @@ public class ButtonGpioRaspPi extends Device{
     }
 
     @Override
-    boolean on() {
+    public boolean on() {
         interruptor.high();
         return false;
     }
 
     @Override
-    boolean off() {
+    public boolean off() {
         interruptor.low();
         return false;
     }

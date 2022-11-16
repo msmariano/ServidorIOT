@@ -48,11 +48,11 @@ public class RestControle extends Device {
     }
 
     @Override
-    boolean on() {       
+    public boolean on() {       
         return setButton(Status.ON);            
     }
     @Override
-    boolean off() {
+    public boolean off() {
         return setButton(Status.OFF);
     }
 
@@ -69,7 +69,7 @@ public class RestControle extends Device {
     
 
     @Override
-    Status getStatus() {
+    public Status getStatus() {
         try{
             Conector plug = (Conector) toDoObject;
             ComandoIOT cIot = new ComandoIOT();

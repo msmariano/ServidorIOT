@@ -13,15 +13,15 @@ import br.com.neuverse.principal.Log;
 
 public abstract class Device {
 
-    abstract boolean on();
+    abstract public boolean on();
 
     abstract public Integer getId();
 
     abstract public void setId(Integer id);
 
-    abstract boolean off();
+    abstract public boolean off();
 
-    abstract Status getStatus();
+    abstract public Status getStatus();
 
     abstract public void toDo(Object obj);
 

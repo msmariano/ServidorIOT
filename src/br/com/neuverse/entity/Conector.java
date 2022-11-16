@@ -48,7 +48,7 @@ public class Conector {
 	private List<Device> devices;
 	@Expose(serialize = true)
 	private List<ButtonIot> buttons = new ArrayList<>();
-	
+		
 
 	public List<ButtonIot> getButtons() {
 		return buttons;
@@ -163,6 +163,10 @@ public class Conector {
 	}
 	public void setIots(List<String> iots) {
 		this.iots = iots;
+	}
+	public class ConectorSessaoServidor{
+		private String endServidor;
+		private Integer porta;
 	}
 	
 		

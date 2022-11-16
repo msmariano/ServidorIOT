@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.neuverse.entity.Parametro;
+import br.com.neuverse.entity.ServidorCfg;
 import br.com.neuverse.principal.Log;
 
 
@@ -18,6 +19,30 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 		//Statement statement = connection.createStatement();
 		//statement.execute("CREATE TABLE IF NOT EXISTS CONFIGURACAO ( ID  INTEGER PRIMARY KEY AUTOINCREMENT, PARAMETRO VARCHAR, C1 VARCHAR,C2 VARCHAR,C3 VARCHAR,C4 VARCHAR,C5 VARCHAR,C6 VARCHAR,C7 VARCHAR,C8 VARCHAR )");
 
+	}
+
+	public List<ServidorCfg> retornaServidores(){
+		List<ServidorCfg> servidores = new ArrayList<>();
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("SELECT * FROM SERVIDORES");
+			while(rs.next()) {
+				ServidorCfg servidorCfg = new ServidorCfg();
+				servidorCfg.setId(rs.getInt("id"));
+				servidorCfg.setNome(rs.getString("Nome"));
+				servidorCfg.setIp(rs.getString("ip"));
+				servidorCfg.setPorta(rs.getInt("porta"));
+				servidorCfg.setMacAdress(rs.getString("macAdress"));
+				servidorCfg.setUsuario("usuario");
+				servidorCfg.setSenha(rs.getString("senha"));
+				servidores.add(servidorCfg);
+			}
+			
+		} catch (SQLException e) {
+			Log.log(this,e.getMessage(),"ERROR");		
+		}		
+
+		return servidores;
 	}
 
 	public List<Parametro> retornaBtnGpio() {
@@ -56,7 +81,32 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 		} catch (SQLException e) {			
 		}
 		return null;
-	}		
+	}	
+	public Integer retornaPortaSSLRest(){
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("SELECT C1 FROM CONFIGURACAO where parametro = 'portaSSLRest'");
+			if(rs.next()) {
+				return Integer.parseInt(rs.getString("C1"));
+			}
+		} catch (SQLException e) {			
+		}
+		return null;
+
+	}	
+
+	public Integer retornaPortaRest(){
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("SELECT C1 FROM CONFIGURACAO where parametro = 'portaRest'");
+			if(rs.next()) {
+				return Integer.parseInt(rs.getString("C1"));
+			}
+		} catch (SQLException e) {			
+		}
+		return null;
+		
+	}	
 
 	@Override
 	public List<Object> listar() {

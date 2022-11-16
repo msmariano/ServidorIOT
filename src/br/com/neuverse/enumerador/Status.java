@@ -40,7 +40,8 @@ public enum Status {
 	KEY(34, "KEY"),
 	NOTIFICACAO(35, "NOTIFICACAO"),
 	PROCESSARBTN(36, "PROCESSARBTN"),
-	COMANDO(36, "COMANDO");
+	COMANDO(36, "COMANDO"),
+	S_REDIR(37,"REDICIONAR SERVIDOR");
 
 	private final int valor;
 	private final String descricao;
