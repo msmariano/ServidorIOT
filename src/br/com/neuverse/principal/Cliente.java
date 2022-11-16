@@ -263,7 +263,7 @@ public class Cliente implements Runnable {
 					bIotDevice.toDo(conector);
 					conector.getDevices().add(bIotDevice);
 				}
-			} else {
+			} else if (conector.getTipo() != null && !conector.getTipo().equals(TipoIOT.HUMAN)) {
 				for (Conector con : conector.getConectores()) {
 					con.setDevices(new ArrayList<>());
 					for (ButtonIot bIot : con.getButtons()) {
@@ -411,10 +411,7 @@ public class Cliente implements Runnable {
 					else
 						tDevice = con.getDevices().size();
 					Log.log(this, "comando encontrou " + plug.getNome() + " com " + tDevice + " devices", "INFO");
-					Type listType = new TypeToken<ArrayList<ButtonIot>>() {
-					}.getType();
-					List<ButtonIot> listaBiot = gson.fromJson(plug.getIot().getjSon(), listType);
-					for (ButtonIot buttonIot : listaBiot) {
+					for (ButtonIot buttonIot : plug.getButtons()) {
 						if (buttonIot.getSelecionado() != null && buttonIot.getSelecionado()) {
 							for (Device device : con.getDevices()) {
 								if (device.getId().equals(buttonIot.getButtonID())) {
@@ -442,20 +439,22 @@ public class Cliente implements Runnable {
 	}
 
 	public synchronized void enviarAtualizar(Conector conEnviar) {
-		if (conectorCliente.getTipo().equals(TipoIOT.HUMAN)) {
-			Log.log(this, "atualizando:" + nickName, "DEBUG");
-			Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
-					.setDateFormat("dd/MM/yyyy HH:mm:ss")
-					.create();
-			conEnviar.setStatus(Status.NOTIFICACAO);
-			String jSon = gson.toJson(conEnviar);
-			BufferedWriter saida;
-			try {
-				saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
-				saida.write(jSon + "\r\n");
-				saida.flush();
-			} catch (IOException e) {
-				Log.log(this, "enviar " + nickName + " " + e.getMessage(), "DEBUG");
+		if(conectorCliente!=null){
+			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN)) {
+				Log.log(this, "atualizando:" + nickName, "DEBUG");
+				Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
+						.setDateFormat("dd/MM/yyyy HH:mm:ss")
+						.create();
+				conEnviar.setStatus(Status.NOTIFICACAO);
+				String jSon = gson.toJson(conEnviar);
+				BufferedWriter saida;
+				try {
+					saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
+					saida.write(jSon + "\r\n");
+					saida.flush();
+				} catch (IOException e) {
+					Log.log(this, "enviar " + nickName + " " + e.getMessage(), "DEBUG");
+				}
 			}
 		}
 	}

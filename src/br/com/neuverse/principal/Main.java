@@ -192,6 +192,7 @@ public class Main {
 				clientes.add(cliente);
 				cliente.setListaConectores(listaConectores);
 				cliente.setListaGpioButtons(listaGpioButtons);
+				cliente.setConectorCliente(networkConector);
 				cliente.setClientes(clientes);
 			}	
 			public void alive(){
