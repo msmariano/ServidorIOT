@@ -68,6 +68,9 @@ public class Cliente implements Runnable {
 			case NOTIFICACAO:
 				processarNotificar(con);
 				break;
+			case NOTIFICACAO_NETWORK:
+				processarNotificarNetwork(con);
+				break;
 			case LOGIN:
 				processarLogin(con);
 				break;
@@ -99,6 +102,39 @@ public class Cliente implements Runnable {
 					if (cliente.getIsLogado()) {
 						Log.log(cliente, "[" + cliente.getNickName() + "]enviando atualizacao de status", "DEBUG");
 						cliente.enviarAtualizar(con);
+					}
+				}
+			} catch (Exception e) {
+				Log.log(this, "atualizar()" + e.getMessage(), "DEBUG");
+			}
+		}
+	}
+
+	public void processarNotificarNetwork(Conector con) {
+		Log.log(this, "NOTIFICACAO NETWORK", "DEBUG");
+		
+		for(Conector ctr : listaConectores){
+			if(ctr.getIdConector().equals(con.getIdConector())){
+				for (ButtonIot b : con.getButtons()) {
+					for (ButtonIot bOwn : ctr.getButtons()) {
+						if (bOwn.getButtonID().equals(b.getButtonID())) {
+							bOwn.setStatus(b.getStatus());
+							break;
+						}
+					}
+				}
+				break;
+			}
+		}
+
+		
+		Log.log(this, "atualizando status device", "DEBUG");
+		if (clientes != null) {
+			try {
+				for (Cliente cliente : clientes) {
+					if (cliente.getIsLogado()) {
+						Log.log(cliente, "[" + cliente.getNickName() + "]enviando atualizacao de status", "DEBUG");
+						cliente.enviarAtualizarNetwork(con);
 					}
 				}
 			} catch (Exception e) {
@@ -440,7 +476,32 @@ public class Cliente implements Runnable {
 
 	public synchronized void enviarAtualizar(Conector conEnviar) {
 		if(conectorCliente!=null){
-			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN)) {
+			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN) || 
+				conectorCliente.getTipo().equals(TipoIOT.NETWORK)){
+				Log.log(this, "atualizando:" + nickName, "DEBUG");
+				Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
+						.setDateFormat("dd/MM/yyyy HH:mm:ss")
+						.create();
+				if(conectorCliente.getTipo().equals(TipoIOT.HUMAN))
+					conEnviar.setStatus(Status.NOTIFICACAO);
+				else if (conectorCliente.getTipo().equals(TipoIOT.NETWORK))
+					conEnviar.setStatus(Status.NOTIFICACAO_NETWORK);
+				String jSon = gson.toJson(conEnviar);
+				BufferedWriter saida;
+				try {
+					saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
+					saida.write(jSon + "\r\n");
+					saida.flush();
+				} catch (IOException e) {
+					Log.log(this, "enviar " + nickName + " " + e.getMessage(), "DEBUG");
+				}
+			}
+		}
+	}
+
+	public synchronized void enviarAtualizarNetwork(Conector conEnviar) {
+		if(conectorCliente!=null){
+			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN)){
 				Log.log(this, "atualizando:" + nickName, "DEBUG");
 				Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
 						.setDateFormat("dd/MM/yyyy HH:mm:ss")

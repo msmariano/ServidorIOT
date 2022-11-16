@@ -41,7 +41,8 @@ public enum Status {
 	NOTIFICACAO(35, "NOTIFICACAO"),
 	PROCESSARBTN(36, "PROCESSARBTN"),
 	COMANDO(36, "COMANDO"),
-	S_REDIR(37,"REDICIONAR SERVIDOR");
+	S_REDIR(37,"REDICIONAR SERVIDOR"),
+	NOTIFICACAO_NETWORK(38,"");
 
 	private final int valor;
 	private final String descricao;

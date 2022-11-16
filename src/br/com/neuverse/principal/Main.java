@@ -1,5 +1,7 @@
 package br.com.neuverse.principal;
 
+//sudo java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 /home/pi/Desktop/ServidorIOT.jar
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -182,18 +184,7 @@ public class Main {
 			Cliente cliente = new Cliente();
 			@Override
 			public synchronized void start() {
-				super.start();
-				networkConector.setTipo(TipoIOT.NETWORK);
-				networkConector.setStatus(Status.LOGIN);
-				networkConector.setConectores(listaConectores);
-				networkConector.setUsuario(servidorCfg.getUsuario());
-				networkConector.setSenha(servidorCfg.getSenha());
-				networkConector.setNome(servidorCfg.getNome());
-				clientes.add(cliente);
-				cliente.setListaConectores(listaConectores);
-				cliente.setListaGpioButtons(listaGpioButtons);
-				cliente.setConectorCliente(networkConector);
-				cliente.setClientes(clientes);
+				super.start();				
 			}	
 			public void alive(){
 				new Thread() {
@@ -233,6 +224,22 @@ public class Main {
 						//SSLSocketFactory factory =sslContext.getSocketFactory();
                         //SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
 						//socket.startHandshake();	
+						clientes.remove(cliente);
+						networkConector = null;
+						cliente = null;
+						networkConector = new Conector();
+						cliente = new Cliente();
+						networkConector.setTipo(TipoIOT.NETWORK);
+						networkConector.setStatus(Status.LOGIN);
+						networkConector.setConectores(listaConectores);
+						networkConector.setUsuario(servidorCfg.getUsuario());
+						networkConector.setSenha(servidorCfg.getSenha());
+						networkConector.setNome(servidorCfg.getNome());
+						clientes.add(cliente);
+						cliente.setListaConectores(listaConectores);
+						cliente.setListaGpioButtons(listaGpioButtons);
+						cliente.setConectorCliente(networkConector);
+						cliente.setClientes(clientes);
 						Socket socket = new Socket("192.168.10.254", 27016);				
 						cliente.setSocketCliente(socket);
 						Gson gson = new GsonBuilder()
