@@ -18,7 +18,7 @@ public class Conexao {
 				Class.forName("org.sqlite.JDBC");
 				connection = DriverManager.getConnection("jdbc:sqlite:/home/pi/Desktop/cfgServidor.db");
 				//connection = DriverManager.getConnection("jdbc:postgresql://192.168.10.254:5432/ServidorIOT","msmarino","mar0403");
-				Log.log(this,"Iniciado conexao postgresql","DEBUG");
+				Log.log(this,"Iniciado conexao sqlite","DEBUG");
 			}
 
 		} catch (Exception e) {

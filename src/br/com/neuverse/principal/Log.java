@@ -35,7 +35,7 @@ public class Log {
 
 	public static void log(Object classe,String mensLog,String tipo) {
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy HH:mm:ss");
-		if(tipo.equals("DEBUG"))
+		//if(tipo.equals("DEBUG"))
 			System.out.println("["+tipo+"] "+sdf.format(new Date())+"["+classe+"]:"+mensLog);
 
 		for(Terminal ter :main.getTerminais()){

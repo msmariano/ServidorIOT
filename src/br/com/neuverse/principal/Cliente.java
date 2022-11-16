@@ -177,7 +177,10 @@ public class Cliente implements Runnable {
 					Mensagem mensagem = new Mensagem();
 					mensagem.setMens(sdf.format(new Date()));
 					conector.setMens(mensagem);
-					Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+					Gson gson = new GsonBuilder()
+						.setDateFormat("dd/MM/yyyy HH:mm:ss")
+						.excludeFieldsWithoutExposeAnnotation()
+						.create();
 					String jSon = gson.toJson(conector);
 					println(jSon);
 					Log.log(this, "Alive:" + conector.getNome() + " " + conector.getMens().getMens(), "INFO");
@@ -227,7 +230,8 @@ public class Cliente implements Runnable {
 				listaConectores.addAll(conector.getConectores());
 			}
 			Log.log(this, "Inserindo " + nickName, "DEBUG");
-			listaConectores.add(conector);
+			if (!conector.getTipo().equals(TipoIOT.NETWORK)) 
+				listaConectores.add(conector);
 			conectorCliente = conector;
 			conector.setStatus(Status.LOGIN_OK);
 			this.nickName = conector.getNome();
@@ -271,7 +275,7 @@ public class Cliente implements Runnable {
 						bIotDevice.setbIot(bIot);
 						bIotDevice.setClientes(clientes);
 						bIotDevice.toDo(con);
-						conector.getDevices().add(bIotDevice);
+						con.getDevices().add(bIotDevice);
 					}
 				}
 			}
@@ -292,7 +296,8 @@ public class Cliente implements Runnable {
 			}
 		} else {
 			timeAlive = LocalDateTime.now();
-			if (conector.getTipo() != null && !conector.getTipo().equals(TipoIOT.HUMAN)) {
+			if (conector.getTipo() != null && !conector.getTipo().equals(TipoIOT.HUMAN)
+				&& !conector.getTipo().equals(TipoIOT.NETWORK)) {
 				new Thread() {
 					@Override
 					public void run() {

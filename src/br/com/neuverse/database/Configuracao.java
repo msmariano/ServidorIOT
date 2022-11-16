@@ -33,7 +33,7 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 				servidorCfg.setIp(rs.getString("ip"));
 				servidorCfg.setPorta(rs.getInt("porta"));
 				servidorCfg.setMacAdress(rs.getString("macAdress"));
-				servidorCfg.setUsuario("usuario");
+				servidorCfg.setUsuario(rs.getString("usuario"));
 				servidorCfg.setSenha(rs.getString("senha"));
 				servidores.add(servidorCfg);
 			}
