@@ -47,6 +47,7 @@ import br.com.neuverse.database.Usuario;
 import br.com.neuverse.entity.ButtonGpioRaspPi;
 import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Conector;
+import br.com.neuverse.entity.ConfigIOT;
 import br.com.neuverse.entity.InfoServidor;
 import br.com.neuverse.entity.Iot;
 import br.com.neuverse.entity.Parametro;
@@ -86,6 +87,17 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws IOException, SQLException {
+
+		System.out.println(args.length);
+		if(args.length>0){
+			if(args[0].equals("confiot")){
+				try {
+					ConfiguraIOT.main(null);
+				} catch (Exception e) {
+				}
+			}
+			return;
+		}
 
 		/*try {
 			String s = Cliente.convertPasswordToMD5("pradopi");

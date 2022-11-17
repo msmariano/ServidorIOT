@@ -92,6 +92,7 @@
         {
             "type": "java",
             "name": "Launch Main",
+            "args" : "confiot",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.Main",
             "projectName": "ServidorIOT"
