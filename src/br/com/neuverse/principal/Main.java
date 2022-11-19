@@ -243,11 +243,16 @@ public class Main {
 			public void run() {
 				while (true) {
 					try {
-						// SSLContext sslContext = buildSslContext(new
-						// FileInputStream("/home/pi/Desktop/servidoriotssl.pem"));
-						// SSLSocketFactory factory =sslContext.getSocketFactory();
-						// SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
-						// socket.startHandshake();
+						//SSLContext sslContext = buildSslContext(new
+						//FileInputStream("/home/pi/Desktop/servidoriotssl.pem"));
+						//SSLSocketFactory factory =sslContext.getSocketFactory();
+						//SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
+
+						SSLSocketFactory factory=(SSLSocketFactory) SSLSocketFactory.getDefault();
+						SSLSocket socket=(SSLSocket) factory.createSocket("192.168.10.254", 27015);
+
+						socket.startHandshake();
+
 						clientes.remove(cliente);
 						networkConector = null;
 						cliente = null;
@@ -264,7 +269,7 @@ public class Main {
 						cliente.setListaGpioButtons(listaGpioButtons);
 						cliente.setConectorCliente(networkConector);
 						cliente.setClientes(clientes);
-						Socket socket = new Socket("192.168.10.254", 27016);
+						//Socket socket = new Socket("192.168.10.254", 27016);
 						socket.setSoTimeout(60000);
 						socket.setKeepAlive(true);
 						cliente.setSocketCliente(socket);
