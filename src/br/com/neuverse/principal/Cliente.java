@@ -48,6 +48,7 @@ public class Cliente implements Runnable {
 	private Conector conectorCliente;
 	private LocalDateTime timeAlive;
 	private Boolean isAlive = false;
+	final Object eventObj = new Object();
 
 	public void processar(Conector con) throws IOException, SQLException {
 		switch (con.getStatus()) {
@@ -56,6 +57,9 @@ public class Cliente implements Runnable {
 				break;
 			case CONECTADO:
 				isAlive = true;
+				synchronized(eventObj) {
+					eventObj.notifyAll();
+				}
 				break;
 			case COMANDO:
 				break;
@@ -73,6 +77,12 @@ public class Cliente implements Runnable {
 				break;
 			case LOGIN:
 				processarLogin(con);
+				if(isLogado){
+					isAlive = true;
+					synchronized(eventObj) {
+						eventObj.notifyAll();
+					}
+				}
 				break;
 			case LOGIN_OK:
 				isLogado = true;
@@ -206,24 +216,25 @@ public class Cliente implements Runnable {
 			new Thread() {
 				@Override
 				public void run() {
-					try {
-						Thread.sleep(30000);
-					} catch (InterruptedException e) {
+					try{
+						sleep(30000);
+						conector.setStatus(Status.CONECTADO);
+						conectorCliente.setStatus(Status.CONECTADO);
+						SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
+						Mensagem mensagem = new Mensagem();
+						mensagem.setMens(sdf.format(new Date()));
+						conector.setMens(mensagem);
+						Gson gson = new GsonBuilder()
+							.setDateFormat("dd/MM/yyyy HH:mm:ss")
+							.excludeFieldsWithoutExposeAnnotation()
+							.create();
+						String jSon = gson.toJson(conector);
+						println(jSon);
+						Log.log(this, "Alive:" + conector.getNome() + " " + conector.getMens().getMens(), "INFO");
+						timeAlive = LocalDateTime.now();
 					}
-					conector.setStatus(Status.CONECTADO);
-					conectorCliente.setStatus(Status.CONECTADO);
-					SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
-					Mensagem mensagem = new Mensagem();
-					mensagem.setMens(sdf.format(new Date()));
-					conector.setMens(mensagem);
-					Gson gson = new GsonBuilder()
-						.setDateFormat("dd/MM/yyyy HH:mm:ss")
-						.excludeFieldsWithoutExposeAnnotation()
-						.create();
-					String jSon = gson.toJson(conector);
-					println(jSon);
-					Log.log(this, "Alive:" + conector.getNome() + " " + conector.getMens().getMens(), "INFO");
-					timeAlive = LocalDateTime.now();
+					catch(Exception e){
+					}
 				}
 			}.start();
 		} else {
@@ -622,5 +633,8 @@ public class Cliente implements Runnable {
 		this.isAlive = isAlive;
 	}
 
+	public Object getEventObj() {
+		return eventObj;
+	}
 
 }
