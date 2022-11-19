@@ -309,7 +309,7 @@ public class Main {
 	public void inicializar() throws IOException {
 
 		ServidorRest servidorRest = new ServidorRest(true, portaSSLRest);
-		ServidorRest servidorRestNoSSL = new ServidorRest(false, portaRest);
+		ServidorRest servidorRestNoSSL = new ServidorRest(true, portaRest);
 		infoServidor = new InfoServidor();
 		infoServidor.setVersao(ver.ver());
 		infoServidor.setUpTime(ver.getUpDate());
@@ -323,14 +323,16 @@ public class Main {
 		servidorRest.setListaConectores(listaConectores);
 		servidorRestNoSSL.setListaConectores(listaConectores);
 
-		servidor = new ServerSocket(serverPortDefault + 1);
+		
 		try {
 			servidorWithSSL = getServerSocket(serverPortDefault);
+			servidor = getServerSocket(serverPortDefault + 1);
+			servidorLog = getServerSocket(serverPortDefault + 2);			
 		} catch (Exception e) {
 			Log.log(this, e.getMessage(), "DEBUG");
 		}
 
-		servidorLog = new ServerSocket(serverPortDefault + 2);
+		
 		servidorRest.monitoraConectores(servidorRest);
 		servidorRestNoSSL.monitoraConectores(servidorRest);
 	}
