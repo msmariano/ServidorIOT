@@ -1,6 +1,7 @@
 package br.com.neuverse.principal;
 
 //sudo java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 /home/pi/Desktop/ServidorIOT.jar
+//openssl s_client -connect localhost:27015 -showcerts
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -64,7 +65,7 @@ public class Main {
 	private static ServerSocket servidorWithSSL;
 	private static ServerSocket servidorLog;
 	private List<Conector> listaConectores = new ArrayList<>();
-	private List<ButtonGpioRaspPi> listaGpioButtons = new ArrayList<>(); 
+	private List<ButtonGpioRaspPi> listaGpioButtons = new ArrayList<>();
 	private List<Device> devices = new ArrayList<>();
 	private List<Cliente> clientes = new ArrayList<>();
 	private List<Socket> logSocket = new ArrayList<>();
@@ -89,8 +90,8 @@ public class Main {
 	public static void main(String[] args) throws IOException, SQLException {
 
 		System.out.println(args.length);
-		if(args.length>0){
-			if(args[0].equals("confiot")){
+		if (args.length > 0) {
+			if (args[0].equals("confiot")) {
 				try {
 					ConfiguraIOT.main(null);
 				} catch (Exception e) {
@@ -99,29 +100,33 @@ public class Main {
 			return;
 		}
 
-		/*try {
-			String s = Cliente.convertPasswordToMD5("pradopi");
-			System.out.println();
-		} catch (NoSuchAlgorithmException e1) {
-		}*/
+		String s = InetAddress.getByName("rasp4msmariano.dynv6.net").toString();
 
-		Main mainServidor = new Main();	
-		Log.setMain(mainServidor);	
-		Log.log(mainServidor,"Bem vindo ao Servidor IOT!","DEBUG");	
-		Log.log(mainServidor,mainServidor.ver.ver(),"DEBUG");
+		/*
+		 * try {
+		 * String s = Cliente.convertPasswordToMD5("pradopi");
+		 * System.out.println();
+		 * } catch (NoSuchAlgorithmException e1) {
+		 * }
+		 */
+
+		Main mainServidor = new Main();
+		Log.setMain(mainServidor);
+		Log.log(mainServidor, "Bem vindo ao Servidor IOT!", "DEBUG");
+		Log.log(mainServidor, mainServidor.ver.ver(), "DEBUG");
 		mainServidor.carregarConfiguracoes();
-		mainServidor.inicializar();		
+		mainServidor.inicializar();
 		mainServidor.criarConectorServidor();
 		mainServidor.carregaGpioButtons();
-		mainServidor.processar();	
+		mainServidor.processar();
 		mainServidor.processarLogs();
 		mainServidor.processarWithSSL();
 		Configuracao cfg = new Configuracao();
-		for(ServidorCfg servidor : cfg.retornaServidores()){
+		for (ServidorCfg servidor : cfg.retornaServidores()) {
 			mainServidor.linkServidorRedicionamento(servidor);
 		}
 
-		//BigInteger n = new BigInteger("20");		
+		// BigInteger n = new BigInteger("20");
 	}
 
 	public List<Socket> getLogSocket() {
@@ -132,19 +137,20 @@ public class Main {
 		this.logSocket = logSocket;
 	}
 
-	public void carregaGpioButtons(){
-		try{
+	public void carregaGpioButtons() {
+		try {
 			Configuracao cfg = new Configuracao();
 			List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
 			List<ButtonIot> buttons = new ArrayList<>();
-			for(Parametro btnGpio : listaBtnGpio) {
-				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio.getC1(),btnGpio.getC2(),btnGpio.getC3(),btnGpio.getC4());
+			for (Parametro btnGpio : listaBtnGpio) {
+				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
+						btnGpio.getC4());
 				listaGpioButtons.add(bgrpi);
 				bgrpi.setConectores(listaConectores);
 				bgrpi.setClientes(clientes);
 				devices.add(bgrpi);
 				ButtonIot bIot = new ButtonIot();
-				bIot.setButtonID(btnGpio.getC4());				
+				bIot.setButtonID(btnGpio.getC4());
 				bIot.setFuncao(Status.getEnum(btnGpio.getC5()));
 				bIot.setTecla(Status.getEnum(btnGpio.getC6()));
 				bIot.setStatus(bgrpi.getStatus());
@@ -159,8 +165,7 @@ public class Main {
 			conector.getIot().setjSon(jSon);
 			conector.setDevices(devices);
 
-		}
-		catch(Exception e) {
+		} catch (Exception e) {
 
 		}
 	}
@@ -173,7 +178,7 @@ public class Main {
 		for (InputStream inputStream : inputStreams) {
 			try {
 				CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-				cert = (X509Certificate)certificateFactory.generateCertificate(inputStream);
+				cert = (X509Certificate) certificateFactory.generateCertificate(inputStream);
 			} finally {
 				inputStream.close();
 			}
@@ -190,52 +195,59 @@ public class Main {
 		return sslContext;
 	}
 
-	public void linkServidorRedicionamento(ServidorCfg servidorCfg){
+	public void linkServidorRedicionamento(ServidorCfg servidorCfg) {
 		new Thread() {
 			Conector networkConector = new Conector();
 			Cliente cliente = new Cliente();
+
 			@Override
 			public synchronized void start() {
-				super.start();				
-			}	
-			public void alive(){
+				super.start();
+			}
+
+			public void alive() {
 				new Thread() {
 					@Override
 					public void run() {
-						while(cliente.getSocketCliente().isConnected()){
-							cliente.setIsAlive(false);
-							Conector conectorAlive = new Conector();
-							conectorAlive.setStatus(Status.ALIVE);
-							conectorAlive.setUsuario(servidorCfg.getUsuario());
-							conectorAlive.setSenha(servidorCfg.getSenha());
-							Gson gson = new GsonBuilder()
-								.setDateFormat("dd/MM/yyyy HH:mm:ss")
-								.excludeFieldsWithoutExposeAnnotation()
-								.create();
-                        	String textJson = gson.toJson(conectorAlive);
-							cliente.println(textJson);
+						while (cliente.getSocketCliente().isConnected()) {
 							try {
-								Thread.sleep(40000);
-							} catch (InterruptedException e) {
-							}	
-							if(!cliente.getIsAlive()){
-								try {
-									//cliente.getSocketCliente().close();
-								} catch (Exception e) {
-								}	
-							}							
+								cliente.setIsAlive(false);
+								Conector conectorAlive = new Conector();
+								conectorAlive.setStatus(Status.ALIVE);
+								conectorAlive.setUsuario(servidorCfg.getUsuario());
+								conectorAlive.setSenha(servidorCfg.getSenha());
+								Gson gson = new GsonBuilder()
+										.setDateFormat("dd/MM/yyyy HH:mm:ss")
+										.excludeFieldsWithoutExposeAnnotation()
+										.create();
+								String textJson = gson.toJson(conectorAlive);
+								cliente.println(textJson);
+								synchronized (cliente.getEventObj()) {
+									cliente.getEventObj().wait(50000);
+									if (cliente.getIsAlive()) {
+										Log.log(this, "Servidor conectado", "DEBUG");										
+									} else {
+										Log.log(this, "Servidor timeout", "DEBUG");
+										cliente.getSocketCliente().close();
+										break;
+									}										
+								}
+							} catch (Exception e) {
+							}
 						}
 					}
 				}.start();
-			}		
+			}
+
 			@Override
 			public void run() {
 				while (true) {
 					try {
-						//SSLContext sslContext = buildSslContext(new FileInputStream("/home/pi/Desktop/servidoriotssl.pem"));
-						//SSLSocketFactory factory =sslContext.getSocketFactory();
-                        //SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
-						//socket.startHandshake();	
+						// SSLContext sslContext = buildSslContext(new
+						// FileInputStream("/home/pi/Desktop/servidoriotssl.pem"));
+						// SSLSocketFactory factory =sslContext.getSocketFactory();
+						// SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
+						// socket.startHandshake();
 						clientes.remove(cliente);
 						networkConector = null;
 						cliente = null;
@@ -252,39 +264,40 @@ public class Main {
 						cliente.setListaGpioButtons(listaGpioButtons);
 						cliente.setConectorCliente(networkConector);
 						cliente.setClientes(clientes);
-						Socket socket = new Socket("192.168.10.254", 27016);				
+						Socket socket = new Socket("192.168.10.254", 27016);
+						socket.setSoTimeout(60000);
+						socket.setKeepAlive(true);
 						cliente.setSocketCliente(socket);
 						Gson gson = new GsonBuilder()
-							.setDateFormat("dd/MM/yyyy HH:mm:ss")
-							.excludeFieldsWithoutExposeAnnotation()
-							.create();
-                        String textJson = gson.toJson(networkConector);
+								.setDateFormat("dd/MM/yyyy HH:mm:ss")
+								.excludeFieldsWithoutExposeAnnotation()
+								.create();
+						String textJson = gson.toJson(networkConector);
 						PrintWriter out = new PrintWriter(
-                        	new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-                        out.println(textJson);
-						//alive();
-                       	cliente.run();		
-						Thread.sleep(10000);									
+								new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+						out.println(textJson);
+						alive();
+						cliente.run();
+						Thread.sleep(10000);
+					} catch (Exception e) {
+						Log.log(this, e.getMessage(), "DEBUG");
 					}
-					catch (Exception e) {
-						Log.log(this,e.getMessage(),"DEBUG");
-					}
-				}				
-			}		
-		}.start();			
+				}
+			}
+		}.start();
 	}
 
-	public void criarConectorServidor(){
+	public void criarConectorServidor() {
 		conector = new Conector();
 		conector.setNome(nomeServidorDefault);
 		UUID uniqueKey = UUID.randomUUID();
-        String id = uniqueKey.toString();
+		String id = uniqueKey.toString();
 		conector.setIdConector(id);
 		conector.setTipo(TipoIOT.SERVIDOR);
-		try {			
+		try {
 			conector.setIp(InetAddress.getLocalHost().getHostName());
 		} catch (UnknownHostException e) {
-			
+
 		}
 		Iot iot = new Iot();
 		iot.setTipoIOT(TipoIOT.RASPBERRYGPIO);
@@ -292,10 +305,11 @@ public class Main {
 		conector.setIot(iot);
 		listaConectores.add(conector);
 	}
+
 	public void inicializar() throws IOException {
-		
-		ServidorRest servidorRest = new ServidorRest(true,portaSSLRest);
-		ServidorRest servidorRestNoSSL = new ServidorRest(false,portaRest);
+
+		ServidorRest servidorRest = new ServidorRest(true, portaSSLRest);
+		ServidorRest servidorRestNoSSL = new ServidorRest(false, portaRest);
 		infoServidor = new InfoServidor();
 		infoServidor.setVersao(ver.ver());
 		infoServidor.setUpTime(ver.getUpDate());
@@ -308,38 +322,38 @@ public class Main {
 		listaConectores = new ArrayList<>();
 		servidorRest.setListaConectores(listaConectores);
 		servidorRestNoSSL.setListaConectores(listaConectores);
-		
-		servidor = new ServerSocket(serverPortDefault+1);
+
+		servidor = new ServerSocket(serverPortDefault + 1);
 		try {
-			servidorWithSSL	= getServerSocket(serverPortDefault);
+			servidorWithSSL = getServerSocket(serverPortDefault);
 		} catch (Exception e) {
-			Log.log(this,e.getMessage(),"DEBUG");
+			Log.log(this, e.getMessage(), "DEBUG");
 		}
-		
-		servidorLog = new ServerSocket(serverPortDefault+2);
+
+		servidorLog = new ServerSocket(serverPortDefault + 2);
 		servidorRest.monitoraConectores(servidorRest);
 		servidorRestNoSSL.monitoraConectores(servidorRest);
 	}
 
-	@SuppressWarnings("unused") 
-	public void carregarConfiguracoes() throws SQLException {		
-		Usuario usuario = new Usuario();	
+	@SuppressWarnings("unused")
+	public void carregarConfiguracoes() throws SQLException {
+		Usuario usuario = new Usuario();
 		Configuracao cfg = new Configuracao();
 		Integer portaServer = cfg.retornaPortaServidor();
 		portaRest = cfg.retornaPortaRest();
 		portaSSLRest = cfg.retornaPortaSSLRest();
-		Log.log(this, "Cfg porta servidor:"+portaServer, "INFO");
-		if(portaServer!=null){
+		Log.log(this, "Cfg porta servidor:" + portaServer, "INFO");
+		if (portaServer != null) {
 			serverPortDefault = portaServer;
 		}
-		if(portaRest==null)
+		if (portaRest == null)
 			portaRest = 8081;
-		if(portaSSLRest==null)
+		if (portaSSLRest == null)
 			portaSSLRest = 8080;
 	}
 
-	public void processar() throws IOException{
-		
+	public void processar() throws IOException {
+
 		new Thread() {
 			@Override
 			public void run() {
@@ -347,13 +361,14 @@ public class Main {
 					try {
 						Socket socketCliente;
 						socketCliente = servidor.accept();
-						Log.log(this,"Cliente conectado: " + socketCliente.getInetAddress().getHostAddress()
-								+ " porta " + socketCliente.getPort(),"INFO");
+						socketCliente.setKeepAlive(true);
+						Log.log(this, "Cliente conectado: " + socketCliente.getInetAddress().getHostAddress()
+								+ " porta " + socketCliente.getPort(), "INFO");
 						new Thread() {
 							@Override
 							public void run() {
-								Log.log(this,"Entrando Thread ip:" + socketCliente.getInetAddress().getHostAddress()
-										+ " porta " + socketCliente.getPort(),"INFO");
+								Log.log(this, "Entrando Thread ip:" + socketCliente.getInetAddress().getHostAddress()
+										+ " porta " + socketCliente.getPort(), "INFO");
 								Cliente cliente = new Cliente();
 								cliente.setIpCliente(socketCliente.getInetAddress().getHostAddress() + " porta "
 										+ socketCliente.getPort());
@@ -363,7 +378,7 @@ public class Main {
 								cliente.setListaGpioButtons(listaGpioButtons);
 								cliente.setClientes(clientes);
 								cliente.run();
-								Log.log(this,"Saindo Thread ip:" + cliente.getIpCliente(),"INFO");
+								Log.log(this, "Saindo Thread ip:" + cliente.getIpCliente(), "INFO");
 							}
 						}.start();
 
@@ -372,10 +387,10 @@ public class Main {
 				}
 			}
 		}.start();
-	}	
+	}
 
-	public void processarWithSSL() throws IOException{
-		
+	public void processarWithSSL() throws IOException {
+
 		new Thread() {
 			@Override
 			public void run() {
@@ -383,13 +398,16 @@ public class Main {
 					try {
 						Socket socketCliente;
 						socketCliente = servidorWithSSL.accept();
-						Log.log(this,"Cliente SSL conectado: " + socketCliente.getInetAddress().getHostAddress()
-								+ " porta " + socketCliente.getPort(),"INFO");
+						socketCliente.setKeepAlive(true);
+						Log.log(this, "Cliente SSL conectado: " + socketCliente.getInetAddress().getHostAddress()
+								+ " porta " + socketCliente.getPort(), "INFO");
 						new Thread() {
 							@Override
 							public void run() {
-								Log.log(this,"Entrando SSL Thread ip:" + socketCliente.getInetAddress().getHostAddress()
-										+ " porta " + socketCliente.getPort(),"INFO");
+								Log.log(this,
+										"Entrando SSL Thread ip:" + socketCliente.getInetAddress().getHostAddress()
+												+ " porta " + socketCliente.getPort(),
+										"INFO");
 								Cliente cliente = new Cliente();
 								cliente.setIpCliente(socketCliente.getInetAddress().getHostAddress() + " porta "
 										+ socketCliente.getPort());
@@ -399,7 +417,7 @@ public class Main {
 								cliente.setListaGpioButtons(listaGpioButtons);
 								cliente.setClientes(clientes);
 								cliente.run();
-								Log.log(this,"Saindo SSL Thread ip:" + cliente.getIpCliente(),"INFO");
+								Log.log(this, "Saindo SSL Thread ip:" + cliente.getIpCliente(), "INFO");
 							}
 						}.start();
 
@@ -411,7 +429,7 @@ public class Main {
 		}.start();
 	}
 
-	private  ServerSocket getServerSocket(Integer porta)throws Exception {
+	private ServerSocket getServerSocket(Integer porta) throws Exception {
 
 		InetSocketAddress address = new InetSocketAddress("0.0.0.0", porta);
 		// Backlog is the maximum number of pending connections on the socket,
@@ -431,8 +449,8 @@ public class Main {
 		return serverSocket;
 	}
 
-	private  SSLContext getSslContext(Path keyStorePath, char[] keyStorePass)
-        throws Exception {
+	private SSLContext getSslContext(Path keyStorePath, char[] keyStorePass)
+			throws Exception {
 
 		KeyStore keyStore = KeyStore.getInstance("JKS");
 		keyStore.load(new FileInputStream(keyStorePath.toFile()), keyStorePass);
@@ -446,8 +464,8 @@ public class Main {
 		return sslContext;
 	}
 
-	public void processarLogs() throws IOException{
-		
+	public void processarLogs() throws IOException {
+
 		new Thread() {
 			@Override
 			public void run() {
@@ -458,8 +476,8 @@ public class Main {
 						logSocket.add(socketLog);
 						new Thread() {
 							@Override
-							public void run(){
-								try{
+							public void run() {
+								try {
 									Socket s = socketLog;
 									Terminal terminal = new Terminal();
 									terminal.setSocket(socketLog);
@@ -468,19 +486,21 @@ public class Main {
 									try {
 										saida = new BufferedWriter(new OutputStreamWriter(socketLog.getOutputStream()));
 										saida.write("Bem vindo ao ServidorIOT!" + "\r\n");
-										saida.write(System.getProperty("os.name")+ "\r\n");
+										saida.write(System.getProperty("os.name") + "\r\n");
 										Versao ver = new Versao();
 										saida.write(ver.ver() + "\r\n");
-										saida.write("IP Host:"+InetAddress.getLocalHost().getHostAddress()+"\r\n");
-										saida.write("Porta Servidor IOT:"+String.valueOf(Log.getMain().getServerPortDefault())+"\r\n");
-										saida.write(terminal.pegarMac());									
-										String processName =
-            								java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+										saida.write("IP Host:" + InetAddress.getLocalHost().getHostAddress() + "\r\n");
+										saida.write("Porta Servidor IOT:"
+												+ String.valueOf(Log.getMain().getServerPortDefault()) + "\r\n");
+										saida.write(terminal.pegarMac());
+										String processName = java.lang.management.ManagementFactory.getRuntimeMXBean()
+												.getName();
 										Long pid = Long.parseLong(processName.split("@")[0]);
-										Long upt = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();                    
+										Long upt = java.lang.management.ManagementFactory.getRuntimeMXBean()
+												.getUptime();
 										terminal.setPid(pid);
 										saida.write(processName + "\r\n");
-										saida.write("PID:"+String.valueOf(pid) + "\r\n");
+										saida.write("PID:" + String.valueOf(pid) + "\r\n");
 										saida.write(String.valueOf(upt) + "\r\n");
 										saida.flush();
 									} catch (IOException e) {
@@ -488,8 +508,7 @@ public class Main {
 									terminal.executar();
 									logSocket.remove(s);
 									terminais.remove(terminal);
-								}
-								catch(Exception e){
+								} catch (Exception e) {
 								}
 							}
 						}.start();
@@ -500,6 +519,7 @@ public class Main {
 			}
 		}.start();
 	}
+
 	public Integer getServerPortDefault() {
 		return serverPortDefault;
 	}
