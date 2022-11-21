@@ -271,12 +271,21 @@ public class Cliente implements Runnable {
 			if (!conector.getTipo().equals(TipoIOT.NETWORK)) {
 				Log.log(this, "Removendo conector anterior se existir ", "DEBUG");
 				for (Conector con : listaConectores) {
-					if (con.getNome().equals(conector.getNome())) {
+					if (con.getMac().equals(conector.getMac())) {
 						listaConectores.remove(con);
 						break;
 					}
 				}
 			} else {
+				//Remover conectores trazidos pela rede
+				for (Conector conNet : conector.getConectores()) {
+					for (Conector con : listaConectores) {
+						if (conNet.getMac().equals(con.getMac())) {
+							listaConectores.remove(con);
+							break;
+						}
+					}
+				}				
 				listaConectores.addAll(conector.getConectores());
 			}
 			if (!conector.getTipo().equals(TipoIOT.NETWORK)) 

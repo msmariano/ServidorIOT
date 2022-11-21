@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -79,42 +78,24 @@ public class Terminal {
         return "";
     }
 
-    private final static String linuxParseMacAddress(String ipConfigResponse) throws ParseException {
-        String localHost = null;
-        try {
-            localHost = InetAddress.getLocalHost().getHostAddress();
-        } catch(java.net.UnknownHostException ex) {
-            ex.printStackTrace();
-            throw new ParseException(ex.getMessage(), 0);
-        }
-    
-        StringTokenizer tokenizer = new StringTokenizer(ipConfigResponse, "\n");
-        String lastMacAddress = null;
+    private static String linuxParseMacAddress(String ipConfigResponse) throws ParseException {
+            
+        StringTokenizer tokenizer = new StringTokenizer(ipConfigResponse, "\n");      
     
         while(tokenizer.hasMoreTokens()) {
             String line = tokenizer.nextToken().trim();
-            boolean containsLocalHost = line.indexOf(localHost) >= 0;
-    
-            //IP 
-            if(containsLocalHost && lastMacAddress != null) {
-                return lastMacAddress;
-            }
-    
+            
             //MAC address
-            int macAddressPosition = line.indexOf("HWaddr");
-            if(macAddressPosition <= 0) continue;
+            int macAddressPosition = line.indexOf("ether");
+            if(macAddressPosition < 0) continue;
     
-            String macAddressCandidate = line.substring(macAddressPosition + 6).trim();
+            String macAddressCandidate = line.substring(macAddressPosition + 6,23).trim();
             if(linuxIsMacAddress(macAddressCandidate)) {
-                lastMacAddress = macAddressCandidate;
-                continue;
+                    return macAddressCandidate;              
             }
         }
     
-        ParseException ex = new ParseException
-            ("Nao foi possível ler o MAC address para " + localHost + " de [" + ipConfigResponse + "]", 0);
-        ex.printStackTrace();
-        throw ex;
+        return "";
     }
 
     private final static boolean linuxIsMacAddress(String macAddressCandidate) {

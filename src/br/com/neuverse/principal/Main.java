@@ -243,13 +243,13 @@ public class Main {
 			public void run() {
 				while (true) {
 					try {
-						//SSLContext sslContext = buildSslContext(new
-						//FileInputStream("/home/pi/Desktop/servidoriotssl.pem"));
-						//SSLSocketFactory factory =sslContext.getSocketFactory();
-						//SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
+						SSLContext sslContext = buildSslContext(new
+						FileInputStream("/home/pi/Desktop/servidoriotsslpradovelho.pem"));
+						SSLSocketFactory factory =sslContext.getSocketFactory();
+						SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
 
-						SSLSocketFactory factory=(SSLSocketFactory) SSLSocketFactory.getDefault();
-						SSLSocket socket=(SSLSocket) factory.createSocket("192.168.10.254", 27015);
+						//SSLSocketFactory factory=(SSLSocketFactory) SSLSocketFactory.getDefault();
+						//SSLSocket socket=(SSLSocket) factory.createSocket("192.168.10.254", 27015);
 
 						socket.startHandshake();
 
@@ -299,6 +299,7 @@ public class Main {
 		String id = uniqueKey.toString();
 		conector.setIdConector(id);
 		conector.setTipo(TipoIOT.SERVIDOR);
+		conector.setMac(Util.pegarMac());
 		try {
 			conector.setIp(InetAddress.getLocalHost().getHostName());
 		} catch (UnknownHostException e) {
@@ -499,7 +500,7 @@ public class Main {
 										saida.write("IP Host:" + InetAddress.getLocalHost().getHostAddress() + "\r\n");
 										saida.write("Porta Servidor IOT:"
 												+ String.valueOf(Log.getMain().getServerPortDefault()) + "\r\n");
-										saida.write(terminal.pegarMac());
+										saida.write("MAC:"+terminal.pegarMac()+ "\r\n");
 										String processName = java.lang.management.ManagementFactory.getRuntimeMXBean()
 												.getName();
 										Long pid = Long.parseLong(processName.split("@")[0]);
