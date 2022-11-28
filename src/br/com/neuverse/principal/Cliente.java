@@ -290,6 +290,17 @@ public class Cliente implements Runnable {
 			}
 			if (!conector.getTipo().equals(TipoIOT.NETWORK)) 
 				listaConectores.add(conector);
+			else{
+				for (Conector con : listaConectores) {
+					if (con.getTipo().equals(TipoIOT.NETWORK)) {
+						try {
+							con.getCliente().getSocketCliente().close();
+						} catch (IOException e) {
+						}
+					}
+				}	
+			}
+
 			conectorCliente = conector;
 			conector.setStatus(Status.LOGIN_OK);
 			this.nickName = conector.getNome();
@@ -423,10 +434,33 @@ public class Cliente implements Runnable {
 		else
 			Log.log(this, "Cliente desconectando!", "DEBUG");
 
+		if(conectorCliente.getTipo().equals(TipoIOT.NETWORK)){
+			//Remover conectores trazidos pela rede
+			for (Conector conNet : conectorCliente.getConectores()) {
+				for (Conector con : listaConectores) {
+					if (conNet.getMac().equals(con.getMac())) {
+						listaConectores.remove(con);
+						break;
+					}
+				}
+			}
+		}
+
 		if (conectorCliente != null) {
 			Log.log(this, "Removendo conector:" + conectorCliente.getNome(), "INFO");
 			listaConectores.remove(conectorCliente);
 		}
+		if(!conectorCliente.getTipo().equals(TipoIOT.NETWORK)){
+			for (Conector con : listaConectores) {
+				if (con.getTipo().equals(TipoIOT.NETWORK)) {
+					try {
+						con.getCliente().getSocketCliente().close();
+					} catch (IOException e) {
+					}
+				}
+			}	
+		}		
+
 
 		Log.log(this, "Cliente:" + nickName + " deslogado", "DEBUG");
 		clientes.remove(this);

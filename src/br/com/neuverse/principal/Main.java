@@ -2,7 +2,8 @@ package br.com.neuverse.principal;
 
 //sudo java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 /home/pi/Desktop/ServidorIOT.jar
 //openssl s_client -connect localhost:27015 -showcerts
-
+// keytool -genkeypair -keyalg RSA -alias selfsigned -keystore servidoriothttps.jks -storepass password -validity 360 -keysize 2048
+// route add 192.168.10.0 mask 255.255.255.0 192.168.0.254
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -65,6 +66,7 @@ public class Main {
 	private static ServerSocket servidorWithSSL;
 	private static ServerSocket servidorLog;
 	private List<Conector> listaConectores = new ArrayList<>();
+	private ListaConector ctrGlobal = new ListaConector();
 	private List<ButtonGpioRaspPi> listaGpioButtons = new ArrayList<>();
 	private List<Device> devices = new ArrayList<>();
 	private List<Cliente> clientes = new ArrayList<>();
@@ -264,6 +266,7 @@ public class Main {
 						networkConector.setUsuario(servidorCfg.getUsuario());
 						networkConector.setSenha(servidorCfg.getSenha());
 						networkConector.setNome(servidorCfg.getNome());
+						networkConector.setCliente(cliente);
 						clientes.add(cliente);
 						cliente.setListaConectores(listaConectores);
 						cliente.setListaGpioButtons(listaGpioButtons);

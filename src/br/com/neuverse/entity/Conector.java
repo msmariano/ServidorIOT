@@ -7,6 +7,7 @@ import com.google.gson.annotations.Expose;
 
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
+import br.com.neuverse.principal.Cliente;
 
 public class Conector {
 	
@@ -48,8 +49,16 @@ public class Conector {
 	private List<Device> devices;
 	@Expose(serialize = true)
 	private List<ButtonIot> buttons = new ArrayList<>();
+	@Expose(serialize = false)
+	private Cliente cliente;
 		
 
+	public Cliente getCliente() {
+		return cliente;
+	}
+	public void setCliente(Cliente cliente) {
+		this.cliente = cliente;
+	}
 	public List<ButtonIot> getButtons() {
 		return buttons;
 	}
