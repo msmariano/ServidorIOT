@@ -9,7 +9,8 @@ public enum TipoIOT {
 	SERVIDORIOT(6,"ServidorIOT"),
 	RESTPROTOCOL(7,"RestProtocol"),
 	RASPBERRYGPIO(8,"Controle através da Gpio Raspberry"),
-	NETWORK(9,"rede");
+	NETWORK(9,"rede"),
+	BANANAGPIO(10,"BananaPi");
 
 	private final int valor;
 	private final String descricao;

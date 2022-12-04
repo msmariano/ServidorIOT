@@ -43,15 +43,19 @@ import javax.net.ssl.TrustManagerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.pi4j.platform.Platform;
+import com.pi4j.platform.PlatformManager;
 
 import br.com.neuverse.database.Configuracao;
 import br.com.neuverse.database.Usuario;
+import br.com.neuverse.entity.ButtonGpioBananaPi;
 import br.com.neuverse.entity.ButtonGpioRaspPi;
 import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Conector;
 import br.com.neuverse.entity.ConfigIOT;
 import br.com.neuverse.entity.InfoServidor;
 import br.com.neuverse.entity.Iot;
+import br.com.neuverse.entity.ListaConector;
 import br.com.neuverse.entity.Parametro;
 import br.com.neuverse.entity.ServidorCfg;
 import br.com.neuverse.entity.ServidorRest;
@@ -68,6 +72,7 @@ public class Main {
 	private List<Conector> listaConectores = new ArrayList<>();
 	private ListaConector ctrGlobal = new ListaConector();
 	private List<ButtonGpioRaspPi> listaGpioButtons = new ArrayList<>();
+	private List<ButtonGpioBananaPi> listaGpioButtonsBanana = new ArrayList<>();
 	private List<Device> devices = new ArrayList<>();
 	private List<Cliente> clientes = new ArrayList<>();
 	private List<Socket> logSocket = new ArrayList<>();
@@ -80,18 +85,12 @@ public class Main {
 	private Conector conector;
 	private Versao ver = new Versao();
 	private List<Terminal> terminais = new ArrayList<>();
-
-	public List<Terminal> getTerminais() {
-		return terminais;
-	}
-
-	public void setTerminais(List<Terminal> terminais) {
-		this.terminais = terminais;
-	}
+	private ServidorRest servidorRest = new ServidorRest(true, portaSSLRest);
+	private ServidorRest servidorRestNoSSL = new ServidorRest(true, portaRest);
 
 	public static void main(String[] args) throws IOException, SQLException {
 
-		System.out.println(args.length);
+		System.out.println("Total parametros:"+args.length);
 		if (args.length > 0) {
 			if (args[0].equals("confiot")) {
 				try {
@@ -99,11 +98,51 @@ public class Main {
 				} catch (Exception e) {
 				}
 			}
+			else if (args[0].equals("testepi")) {
+				try{
+					ButtonGpioBananaPi btn = new ButtonGpioBananaPi(Integer.parseInt(args[2]), -1, -1, 1,"",2);
+					if(args[1].equals("on"))
+						btn.on();
+					else if(args[1].equals("off"))
+						btn.off();
+				}
+				catch(Exception e){
+					System.out.println(e.getMessage());
+				}
+
+			}
+			else if (args[0].equals("testepile")) {
+				try{
+					try{
+						System.out.println("Lendo Gpio"+args[1]);
+						String gpioNameOut = "gpio"+args[1];
+						BufferedReader le = new BufferedReader(new FileReader("/sys/class/gpio/"+gpioNameOut+"/value"));
+						char b[] =new char[10];
+						le.read(b);
+						String valor = String.valueOf(b);
+						System.out.println(valor);
+						le.close();
+						if(valor.trim().equals("0")){               
+							System.out.println("OFF");          
+						}
+						else if(valor.trim().equals("1")){
+							System.out.println("ON");
+						}            
+					}
+					catch(Exception e){
+						System.out.println(e.getMessage());
+					}
+
+				}
+				catch(Exception e){
+
+				}
+			}
 			return;
 		}
 
-		String s = InetAddress.getByName("rasp4msmariano.dynv6.net").toString();
-
+		String servidorNeuverse = InetAddress.getByName("rasp4msmariano.dynv6.net").toString();
+		System.out.println("Endereco servidor:"+servidorNeuverse);
 		/*
 		 * try {
 		 * String s = Cliente.convertPasswordToMD5("pradopi");
@@ -111,7 +150,7 @@ public class Main {
 		 * } catch (NoSuchAlgorithmException e1) {
 		 * }
 		 */
-
+		Configuracao cfg = new Configuracao();	
 		Main mainServidor = new Main();
 		Log.setMain(mainServidor);
 		Log.log(mainServidor, "Bem vindo ao Servidor IOT!", "DEBUG");
@@ -119,11 +158,23 @@ public class Main {
 		mainServidor.carregarConfiguracoes();
 		mainServidor.inicializar();
 		mainServidor.criarConectorServidor();
-		mainServidor.carregaGpioButtons();
-		mainServidor.processar();
-		mainServidor.processarLogs();
-		mainServidor.processarWithSSL();
-		Configuracao cfg = new Configuracao();
+		
+		if(cfg.getTipoServidor().equals(1)){
+			mainServidor.carregaGpioButtons();
+		}
+		else if(cfg.getTipoServidor().equals(2)){
+			mainServidor.carregaGpioButtonsBanana();
+		}
+		if(servidor!=null){
+			mainServidor.getServidorRestNoSSL().monitoraConectores(mainServidor.getServidorRestNoSSL());
+			mainServidor.processar();
+		}
+		if(servidorLog!=null)	
+			mainServidor.processarLogs();
+		if(servidorWithSSL!=null){
+			mainServidor.getServidorRest().monitoraConectores(mainServidor.getServidorRest());
+			mainServidor.processarWithSSL();
+		}
 		for (ServidorCfg servidor : cfg.retornaServidores()) {
 			mainServidor.linkServidorRedicionamento(servidor);
 		}
@@ -145,22 +196,27 @@ public class Main {
 			List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
 			List<ButtonIot> buttons = new ArrayList<>();
 			for (Parametro btnGpio : listaBtnGpio) {
-				ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
-						btnGpio.getC4());
-				listaGpioButtons.add(bgrpi);
-				bgrpi.setConectores(listaConectores);
-				bgrpi.setClientes(clientes);
-				devices.add(bgrpi);
-				ButtonIot bIot = new ButtonIot();
-				bIot.setButtonID(btnGpio.getC4());
-				bIot.setFuncao(Status.getEnum(btnGpio.getC5()));
-				bIot.setTecla(Status.getEnum(btnGpio.getC6()));
-				bIot.setStatus(bgrpi.getStatus());
-				bIot.setNomeGpio("CtrlGpioServidor");
-				bIot.setNick(btnGpio.getC8());
-				bgrpi.toDo(bIot);
-				buttons.add(bIot);
-				conector.getButtons().add(bIot);
+				try{
+					ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
+							btnGpio.getC4());
+					listaGpioButtons.add(bgrpi);
+					bgrpi.setConectores(listaConectores);
+					bgrpi.setClientes(clientes);
+					devices.add(bgrpi);
+					ButtonIot bIot = new ButtonIot();
+					bIot.setButtonID(btnGpio.getC4());
+					bIot.setFuncao(Status.getEnum(btnGpio.getC5()));
+					bIot.setTecla(Status.getEnum(btnGpio.getC6()));
+					bIot.setStatus(bgrpi.getStatus());
+					bIot.setNomeGpio("CtrlGpioServidor");
+					bIot.setNick(btnGpio.getC8());
+					bgrpi.toDo(bIot);
+					buttons.add(bIot);
+					conector.getButtons().add(bIot);
+				}
+				catch(Exception e){
+					Log.log(this, "Inicializa Gpio Servidor :"+e.getMessage(), "DEBUG");
+				}
 			}
 			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 			String jSon = gson.toJson(buttons);
@@ -168,7 +224,47 @@ public class Main {
 			conector.setDevices(devices);
 
 		} catch (Exception e) {
+			Log.log(this, "carregaGpioButtons() :"+e.getMessage(), "DEBUG");
+		}
+	}
 
+	public void carregaGpioButtonsBanana() {
+		try {
+			Configuracao cfg = new Configuracao();
+			List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
+			List<ButtonIot> buttons = new ArrayList<>();
+			for (Parametro btnGpio : listaBtnGpio) {
+				try{
+					ButtonGpioBananaPi bgrpi = new ButtonGpioBananaPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
+							btnGpio.getC4(),btnGpio.getC9(),btnGpio.getC10());
+					if(btnGpio.getC1()>-1){
+						listaGpioButtonsBanana.add(bgrpi);
+						bgrpi.setConectores(listaConectores);
+						bgrpi.setClientes(clientes);
+						devices.add(bgrpi);
+						ButtonIot bIot = new ButtonIot();
+						bIot.setButtonID(btnGpio.getC4());
+						bIot.setFuncao(Status.getEnum(btnGpio.getC5()));
+						bIot.setTecla(Status.getEnum(btnGpio.getC6()));
+						bIot.setStatus(bgrpi.getStatus());
+						bIot.setNomeGpio("CtrlGpioServidor");
+						bIot.setNick(btnGpio.getC8());
+						bgrpi.toDo(bIot);
+						buttons.add(bIot);
+						conector.getButtons().add(bIot);
+					}
+				}
+				catch(Exception e){
+					Log.log(this, "Inicializa Gpio Servidor :"+e.getMessage(), "DEBUG");
+				}
+			}
+			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+			String jSon = gson.toJson(buttons);
+			conector.getIot().setjSon(jSon);
+			conector.setDevices(devices);
+
+		} catch (Exception e) {
+			Log.log(this, "carregaGpioButtons() :"+e.getMessage(), "DEBUG");
 		}
 	}
 
@@ -270,6 +366,7 @@ public class Main {
 						clientes.add(cliente);
 						cliente.setListaConectores(listaConectores);
 						cliente.setListaGpioButtons(listaGpioButtons);
+						cliente.setListaGpioButtonsBanana(listaGpioButtonsBanana);
 						cliente.setConectorCliente(networkConector);
 						cliente.setClientes(clientes);
 						//Socket socket = new Socket("192.168.10.254", 27016);
@@ -295,9 +392,14 @@ public class Main {
 		}.start();
 	}
 
-	public void criarConectorServidor() {
+	public void criarConectorServidor() throws SQLException {
+		Configuracao cfg = new Configuracao();	
 		conector = new Conector();
-		conector.setNome(nomeServidorDefault);
+		String nomeServ = cfg.getNomeServidor();
+		if(nomeServ.equals(""))
+			conector.setNome(nomeServidorDefault);
+		else
+			conector.setNome(nomeServ);	
 		UUID uniqueKey = UUID.randomUUID();
 		String id = uniqueKey.toString();
 		conector.setIdConector(id);
@@ -309,16 +411,18 @@ public class Main {
 
 		}
 		Iot iot = new Iot();
-		iot.setTipoIOT(TipoIOT.RASPBERRYGPIO);
+		if(cfg.getTipoServidor().equals(1)){
+			iot.setTipoIOT(TipoIOT.RASPBERRYGPIO);
+		}
+		else if(cfg.getTipoServidor().equals(2)){
+			iot.setTipoIOT(TipoIOT.BANANAGPIO);
+		}
 		iot.setName(nomeDeviceDefault);
 		conector.setIot(iot);
 		listaConectores.add(conector);
 	}
 
 	public void inicializar() throws IOException {
-
-		ServidorRest servidorRest = new ServidorRest(true, portaSSLRest);
-		ServidorRest servidorRestNoSSL = new ServidorRest(true, portaRest);
 		infoServidor = new InfoServidor();
 		infoServidor.setVersao(ver.ver());
 		infoServidor.setUpTime(ver.getUpDate());
@@ -339,11 +443,7 @@ public class Main {
 			servidorLog = getServerSocket(serverPortDefault + 2);			
 		} catch (Exception e) {
 			Log.log(this, e.getMessage(), "DEBUG");
-		}
-
-		
-		servidorRest.monitoraConectores(servidorRest);
-		servidorRestNoSSL.monitoraConectores(servidorRest);
+		}		
 	}
 
 	@SuppressWarnings("unused")
@@ -387,6 +487,7 @@ public class Main {
 								cliente.setSocketCliente(socketCliente);
 								cliente.setListaConectores(listaConectores);
 								cliente.setListaGpioButtons(listaGpioButtons);
+								cliente.setListaGpioButtonsBanana(listaGpioButtonsBanana);
 								cliente.setClientes(clientes);
 								cliente.run();
 								Log.log(this, "Saindo Thread ip:" + cliente.getIpCliente(), "INFO");
@@ -426,6 +527,7 @@ public class Main {
 								cliente.setSocketCliente(socketCliente);
 								cliente.setListaConectores(listaConectores);
 								cliente.setListaGpioButtons(listaGpioButtons);
+								cliente.setListaGpioButtonsBanana(listaGpioButtonsBanana);
 								cliente.setClientes(clientes);
 								cliente.run();
 								Log.log(this, "Saindo SSL Thread ip:" + cliente.getIpCliente(), "INFO");
@@ -537,5 +639,31 @@ public class Main {
 
 	public void setServerPortDefault(Integer serverPortDefault) {
 		this.serverPortDefault = serverPortDefault;
+	}
+
+	public ServidorRest getServidorRestNoSSL() {
+		return servidorRestNoSSL;
+	}
+
+	public void setServidorRestNoSSL(ServidorRest servidorRestNoSSL) {
+		this.servidorRestNoSSL = servidorRestNoSSL;
+	}
+
+	public ServidorRest getServidorRest() {
+		return servidorRest;
+	}
+
+	public void setServidorRest(ServidorRest servidorRest) {
+		this.servidorRest = servidorRest;
+	}
+
+	
+
+	public List<Terminal> getTerminais() {
+		return terminais;
+	}
+
+	public void setTerminais(List<Terminal> terminais) {
+		this.terminais = terminais;
 	}
 }

@@ -38,58 +38,60 @@ public class Log {
 		//if(tipo.equals("DEBUG"))
 			System.out.println("["+tipo+"] "+sdf.format(new Date())+"["+classe+"]:"+mensLog);
 
-		for(Terminal ter :main.getTerminais()){
-			BufferedWriter saida;
-			String classeFiltrada=null;
-			boolean filtrar = false;
-			try {				
-				try{
-					for(String str : ter.regras){
-						if(str.contains("classe")){
-							String s[] = str.split(";");
-							classeFiltrada = s[1];
-							break;
-						}
-					}	
-					for(String str : ter.regras){
-						if(str.contains("mens")){
-							filtrar = true;
-							String s[] = str.split(";");
-							if(mensLog.contains(s[1])){
-								filtrar = false;
+		if(main!=null&&main.getTerminais()!=null){
+			for(Terminal ter :main.getTerminais()){
+				BufferedWriter saida;
+				String classeFiltrada=null;
+				boolean filtrar = false;
+				try {				
+					try{
+						for(String str : ter.regras){
+							if(str.contains("classe")){
+								String s[] = str.split(";");
+								classeFiltrada = s[1];
 								break;
 							}
-						}
-					}											
-				}
-				catch(Exception e){
+						}	
+						for(String str : ter.regras){
+							if(str.contains("mens")){
+								filtrar = true;
+								String s[] = str.split(";");
+								if(mensLog.contains(s[1])){
+									filtrar = false;
+									break;
+								}
+							}
+						}											
+					}
+					catch(Exception e){
+						System.out.println(e.getMessage());
+					}
+					
+					if(ter.regras.contains("all") ||ter.regras.contains(tipo)){
+						if(classeFiltrada!=null&&!classe.toString().contains(classeFiltrada))
+							continue;
+						if(filtrar)
+							continue;
+						saida = new BufferedWriter(
+							new OutputStreamWriter(ter.getSocket().getOutputStream()));
+						saida.write("["+tipo+"] "+sdf.format(new Date())
+							+"["+classe+"]:"+mensLog+"\r\n");
+						saida.flush();
+					}
+				} catch (IOException e) {				
 					System.out.println(e.getMessage());
 				}
-				
-				if(ter.regras.contains("all") ||ter.regras.contains(tipo)){
-					if(classeFiltrada!=null&&!classe.toString().contains(classeFiltrada))
-						continue;
-					if(filtrar)
-						continue;
-					saida = new BufferedWriter(
-						new OutputStreamWriter(ter.getSocket().getOutputStream()));
-					saida.write("["+tipo+"] "+sdf.format(new Date())
-						+"["+classe+"]:"+mensLog+"\r\n");
-					saida.flush();
-				}
-			} catch (IOException e) {				
-				System.out.println(e.getMessage());
 			}
-		}
-		
-		if(bloquearProc&&tipo.contains("SALVAR")){
-			BufferedWriter bw;
-			try {
-				bw = new BufferedWriter(new FileWriter("log.txt",true));
-				bw.write(mensLog+"\n");
-				bw.close();
-				
-			} catch (Exception e) {
+			
+			if(bloquearProc&&tipo.contains("SALVAR")){
+				BufferedWriter bw;
+				try {
+					bw = new BufferedWriter(new FileWriter("log.txt",true));
+					bw.write(mensLog+"\n");
+					bw.close();
+					
+				} catch (Exception e) {
+				}
 			}
 		}		
 	}

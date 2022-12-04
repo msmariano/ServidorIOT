@@ -10,9 +10,31 @@ public class Parametro {
     private Integer c6;
     private Integer c7;
     private String  c8;
+    private String  c9;
+    
+    
+    
+    public String getC9() {
+        return c9;
+    }
 
+    public void setC9(String c9) {
+        this.c9 = c9;
+    }
+
+    private Integer  c10;
    
     
+
+   
+
+    public Integer getC10() {
+        return c10;
+    }
+
+    public void setC10(Integer c10) {
+        this.c10 = c10;
+    }
 
     /**
      * @return Integer return the c1

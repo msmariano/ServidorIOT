@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import com.google.gson.reflect.TypeToken;
 
 import br.com.neuverse.database.Usuario;
+import br.com.neuverse.entity.ButtonGpioBananaPi;
 import br.com.neuverse.entity.ButtonGpioRaspPi;
 import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.ButtonIotDevice;
@@ -39,6 +40,7 @@ public class Cliente implements Runnable {
 	private Socket socketCliente;
 	private List<Conector> listaConectores;
 	private List<ButtonGpioRaspPi> listaGpioButtons;
+	private List<ButtonGpioBananaPi> listaGpioButtonsBanana;
 	private List<Cliente> clientes;
 	private String id;
 	public BufferedReader entrada;
@@ -111,7 +113,8 @@ public class Cliente implements Runnable {
 				for (Cliente cliente : clientes) {
 					if (cliente.getIsLogado()) {
 						Log.log(cliente, "[" + cliente.getNickName() + "]enviando atualizacao de status", "DEBUG");
-						cliente.enviarAtualizar(con);
+						if(cliente!=this)
+							cliente.enviarAtualizar(con);
 					}
 				}
 			} catch (Exception e) {
@@ -175,6 +178,17 @@ public class Cliente implements Runnable {
 									}
 								} else {
 									bgrp.desligar();
+								}
+							}
+							break;
+						case BANANAGPIO:
+							for (ButtonGpioBananaPi bgrp : listaGpioButtonsBanana) {
+								if (biot.getButtonID() == bgrp.getId()) {
+									if (biot.getStatus() == Status.ON) {
+										bgrp.on();
+									}
+								} else {
+									bgrp.off();
 								}
 							}
 							break;
@@ -532,22 +546,29 @@ public class Cliente implements Runnable {
 		if(conectorCliente!=null){
 			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN) || 
 				conectorCliente.getTipo().equals(TipoIOT.NETWORK)){
-				Log.log(this, "atualizando:" + nickName, "DEBUG");
-				Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
-						.setDateFormat("dd/MM/yyyy HH:mm:ss")
-						.create();
-				if(conectorCliente.getTipo().equals(TipoIOT.HUMAN))
-					conEnviar.setStatus(Status.NOTIFICACAO);
-				else if (conectorCliente.getTipo().equals(TipoIOT.NETWORK))
-					conEnviar.setStatus(Status.NOTIFICACAO_NETWORK);
-				String jSon = gson.toJson(conEnviar);
-				BufferedWriter saida;
-				try {
-					saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
-					saida.write(jSon + "\r\n");
-					saida.flush();
-				} catch (IOException e) {
-					Log.log(this, "enviar " + nickName + " " + e.getMessage(), "DEBUG");
+				
+				Log.log(this,"idConectorCliente"+conectorCliente.getIdConector(),"DEBUG");
+				Log.log(this,"idConectorEnviar"+conEnviar.getIdConector(),"DEBUG");
+
+				if(!conEnviar.getIdConector().equals(conectorCliente.getIdConector())){
+					Log.log(this, "atualizando:" + nickName, "DEBUG");
+					Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
+							.setDateFormat("dd/MM/yyyy HH:mm:ss")
+							.create();
+					if(conectorCliente.getTipo().equals(TipoIOT.HUMAN))
+						conEnviar.setStatus(Status.NOTIFICACAO);
+					else if (conectorCliente.getTipo().equals(TipoIOT.NETWORK))
+						conEnviar.setStatus(Status.NOTIFICACAO_NETWORK);
+					String jSon = gson.toJson(conEnviar);
+					Log.log(this,"json de atualizacao:"+jSon,"DEBUG");
+					BufferedWriter saida;
+					try {
+						saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
+						saida.write(jSon + "\r\n");
+						saida.flush();
+					} catch (IOException e) {
+						Log.log(this, "enviar " + nickName + " " + e.getMessage(), "DEBUG");
+					}
 				}
 			}
 		}
@@ -678,6 +699,14 @@ public class Cliente implements Runnable {
 
 	public Object getEventObj() {
 		return eventObj;
+	}
+
+	public List<ButtonGpioBananaPi> getListaGpioButtonsBanana() {
+		return listaGpioButtonsBanana;
+	}
+
+	public void setListaGpioButtonsBanana(List<ButtonGpioBananaPi> listaGpioButtonsBanana) {
+		this.listaGpioButtonsBanana = listaGpioButtonsBanana;
 	}
 
 }

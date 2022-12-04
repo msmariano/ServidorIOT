@@ -204,7 +204,7 @@ public class ServidorRest implements HttpHandler {
                         Thread.sleep(5000);
                     }
                     catch(Exception e){
-
+                        Log.log(this, "monitoraConectores time", "DEBUG");
                     }
                     
                 }

@@ -45,12 +45,38 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 		return servidores;
 	}
 
+	public Integer getTipoServidor(){
+		try{
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("SELECT C1 FROM CONFIGURACAO where parametro = 'tipoServidor'");
+			if(rs.next()) {
+				return rs.getInt("C1");
+			}
+		}
+		catch(Exception e){
+		}
+		return 1;
+	}
+
+	public String getNomeServidor(){
+		try{
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("SELECT C1 FROM CONFIGURACAO where parametro = 'nomeServidor'");
+			if(rs.next()) {
+				return rs.getString("C1");
+			}
+		}
+		catch(Exception e){
+		}
+		return "";
+	}
+
 	public List<Parametro> retornaBtnGpio() {
 
 		List<Parametro> parametros = new ArrayList<>();
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet rs = statement.executeQuery("SELECT C1,C2,C3,C4,C5,C6,C7,C8 FROM CONFIGURACAO where parametro = 'btnGpio'");
+			ResultSet rs = statement.executeQuery("SELECT C1,C2,C3,C4,C5,C6,C7,C8,C9,C10 FROM CONFIGURACAO where parametro = 'btnGpio'");
 			while(rs.next()) {
 
 				Parametro parametro = new Parametro();
@@ -62,6 +88,8 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 				parametro.setC6(rs.getInt("C6"));
 				parametro.setC7(rs.getInt("C7"));
 				parametro.setC8(rs.getString("C8"));
+				parametro.setC9(rs.getString("C9"));
+				parametro.setC10(rs.getInt("C10"));
 				parametros.add(parametro);
 			}
 			
