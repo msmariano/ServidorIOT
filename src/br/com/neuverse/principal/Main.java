@@ -6,7 +6,7 @@ package br.com.neuverse.principal;
 // route add 192.168.10.0 mask 255.255.255.0 192.168.0.254
 //keytool.exe -import -file "C:\Users\msmar\OneDrive\Documentos\ipca.bcb.gov.br.crt" -keystore "ipca.bcb.gov.br.crt" -storepass "changeit"
 //ssh-keygen(sem senha) cat ~/.ssh/id_rsa.pub | ssh pi@192.168.10.254 "mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && chmod -R go= ~/.ssh && cat >> ~/.ssh/authorized_keys"
-
+// scp .\ServidorIOT-1.jar pi@192.168.10.76:/home/pi
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Ccma",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.Ccma",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
+            "name": "Banana",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.Banana",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "Launch JTableButtonTest",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.JTableButtonTest",
