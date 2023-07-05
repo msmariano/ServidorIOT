@@ -456,6 +456,10 @@ public class Main {
 		Configuracao cfg = new Configuracao();
 		Integer portaServer = cfg.retornaPortaServidor();
 		portaRest = cfg.retornaPortaRest();
+		if(cfg.getControlePiscina())
+		{
+			new ControlePiscina().inicializar();
+		}
 		portaSSLRest = cfg.retornaPortaSSLRest();
 		Log.log(this, "Cfg porta servidor:" + portaServer, "INFO");
 		if (portaServer != null) {

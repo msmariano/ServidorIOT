@@ -76,10 +76,6 @@ public class Ccma {
             String queryCcma = rs.getString("qry");
             if(queryCcma!=null){
                 
-
-                    
-
-               
                 if(hora.equals(24))
                     hora = 0;
                 if(minuto.equals(60))

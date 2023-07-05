@@ -45,6 +45,19 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 		return servidores;
 	}
 
+	public Boolean getControlePiscina(){
+		try{
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("SELECT C1 FROM CONFIGURACAO where parametro = 'controlePiscina'");
+			if(rs.next()) {
+				return rs.getBoolean("C1");
+			}
+		}
+		catch(Exception e){
+		}
+		return false;
+	}
+
 	public Integer getTipoServidor(){
 		try{
 			Statement statement = connection.createStatement();
