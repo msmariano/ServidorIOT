@@ -1,3 +1,6 @@
+//curl  -k -X POST https://192.168.0.125:8080/ServidorIOT/controlePiscina
+
+
 package br.com.neuverse.entity;
 
 import java.io.BufferedReader;
@@ -170,7 +173,7 @@ public class ServidorRest implements HttpHandler {
                 httpServer.setExecutor(threadPoolExecutor);
                 this.httpServer.start();
             } catch (Exception e) {
-                Log.log(this, e.getMessage(), "DEBUG");
+                Log.log(this, "Falhou inicializar ServidorRestHttps:" +e.getMessage(), "DEBUG");
             }
         } else {
             try {
@@ -402,11 +405,19 @@ public class ServidorRest implements HttpHandler {
                 send(200, jSon, exchange);
 
             } else if (uri.getPath().equals("/ServidorIOT/controlePiscina")) {
-
+                String mens = "";
                 ControlePiscina pis = getMain().getControlePiscina(); 
                 pis.retornoStatusFiltro();
-
-                pis.ligarBombaFiltro(1);
+                if(pis.lerPin("17").equals("0")) {
+                    pis.ligarBombaFiltro(1);
+                    mens = "{\"Status\" : \"Ligado\"}\r\n";
+                }
+                else {
+                    pis.ligarBombaFiltro(0);
+                    mens = "{\"Status\" : \"Desligado\"}\r\n";   
+                }
+                
+                send(200, mens, exchange);
 
             } else if (uri.getPath().equals("/ServidorIOT/comando")) {
 

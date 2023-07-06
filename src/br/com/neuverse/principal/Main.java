@@ -460,6 +460,7 @@ public class Main {
 		portaRest = cfg.retornaPortaRest();
 		if(cfg.getControlePiscina())
 		{
+			Log.log(this, "Iniciando Controle Piscina", "DEBUG");
 			controlePiscina = new ControlePiscina();
 			controlePiscina.inicializar();
 		}

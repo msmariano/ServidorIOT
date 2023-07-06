@@ -45,7 +45,7 @@ public class ControlePiscina {
         if (min != null) {
             minutos = min;
         }
-        System.out.println("Timer Ativado para os horários:" + horarios + " por " + minutos + " minuto(s)");
+        Log.log(this,"Timer Ativado para os horários:" + horarios + " por " + minutos + " minuto(s)","DEBUG");
 
         new Thread() {
             @Override
@@ -57,19 +57,19 @@ public class ControlePiscina {
                         gpio.write(String.valueOf(17));
                         gpio.close();
                     } catch (Exception e) {
-                        System.err.println("Export:" + e.getMessage());
+                        
                     }
                     gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/gpio17/direction", false));
                     gpio.write("out");
                     gpio.close();
                     SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-                    System.out.println(sdf.format(new Date()));
+                    Log.log(this,"Timer iniciado as "+sdf.format(new Date()),"DEBUG");
                     while (true) {
                         String t = sdf.format(new Date());
                         Thread.sleep(1000);
 
                         if (horarios.contains(t)) {
-
+                            Log.log(this,"Ativando Filtro Bomba pelo timer.","DEBUG");
                             ligarBombaFiltro(1);
                             Thread.sleep(1000 * 60 * minutos);
 
@@ -79,7 +79,7 @@ public class ControlePiscina {
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println(e.getMessage());
+                    Log.log(this,"Timer "+e.getMessage(),"ERROR");
                 }
             }
         }.start();
@@ -91,7 +91,7 @@ public class ControlePiscina {
             public void run() {
                 boolean acionada = false;
                 boolean push = false;
-
+                Log.log(this, "Iniciando monitoraChave", "DEBUG");
                 while (true) {
                     if (lerPin(chave).equals("0")) {
                         if (!acionada) {
@@ -134,6 +134,7 @@ public class ControlePiscina {
         new Thread() {
             @Override
             public void run() {
+                Log.log(this, "Iniciando monitoraAgua", "DEBUG");
                 boolean alerta = false;
                 boolean maximo = false;
 
@@ -194,7 +195,7 @@ public class ControlePiscina {
         }
     }
 
-    public static String lerPin(String pin) {
+    public  String lerPin(String pin) {
         String ret = null;
 
         try {
