@@ -91,6 +91,7 @@ public class Main {
 	private List<Terminal> terminais = new ArrayList<>();
 	private ServidorRest servidorRest = new ServidorRest(true, portaSSLRest);
 	private ServidorRest servidorRestNoSSL = new ServidorRest(true, portaRest);
+	private ControlePiscina controlePiscina = null;
 
 	public static void main(String[] args) throws IOException, SQLException {
 
@@ -156,6 +157,7 @@ public class Main {
 		 */
 		Configuracao cfg = new Configuracao();	
 		Main mainServidor = new Main();
+		mainServidor.getServidorRest().setMain(mainServidor);
 		Log.setMain(mainServidor);
 		Log.log(mainServidor, "Bem vindo ao Servidor IOT!", "DEBUG");
 		Log.log(mainServidor, mainServidor.ver.ver(), "DEBUG");
@@ -458,7 +460,8 @@ public class Main {
 		portaRest = cfg.retornaPortaRest();
 		if(cfg.getControlePiscina())
 		{
-			new ControlePiscina().inicializar();
+			controlePiscina = new ControlePiscina();
+			controlePiscina.inicializar();
 		}
 		portaSSLRest = cfg.retornaPortaSSLRest();
 		Log.log(this, "Cfg porta servidor:" + portaServer, "INFO");
@@ -674,4 +677,9 @@ public class Main {
 	public void setTerminais(List<Terminal> terminais) {
 		this.terminais = terminais;
 	}
+	
+	public ControlePiscina getControlePiscina(){
+		return controlePiscina;
+	}
+
 }

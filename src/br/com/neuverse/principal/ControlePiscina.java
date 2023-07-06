@@ -7,6 +7,8 @@ import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import br.com.neuverse.enumerador.Status;
+
 public class ControlePiscina {
 
     private String horarios = "00:00;04:00;08:00;12:00;16:00;20:00";
@@ -19,6 +21,13 @@ public class ControlePiscina {
     final static private String on = "1";
     final static private String off = "0";
     static private boolean onByKey = false;
+
+    public Status retornoStatusFiltro(){
+        if(lerPin(filtro).equals("1")){
+            return Status.ON;
+        }
+        return Status.OFF;
+    }
 
 
     public void inicializar(){
