@@ -42,7 +42,10 @@ public enum Status {
 	PROCESSARBTN(36, "PROCESSARBTN"),
 	COMANDO(36, "COMANDO"),
 	S_REDIR(37,"REDICIONAR SERVIDOR"),
-	NOTIFICACAO_NETWORK(38,"");
+	NOTIFICACAO_NETWORK(38,""),
+	PRESENCA_AGUA(39,"presenca de agua"),
+	ALERTA_AGUA(40,"alerta de agua"),
+	NORMAL_AGUA(41,"agua normal");
 
 	private final int valor;
 	private final String descricao;

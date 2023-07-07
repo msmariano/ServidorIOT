@@ -48,6 +48,7 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 
 import br.com.neuverse.database.Usuario;
+import br.com.neuverse.enumerador.ComEnum;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.principal.ControlePiscina;
 import br.com.neuverse.principal.Log;
@@ -405,19 +406,23 @@ public class ServidorRest implements HttpHandler {
                 send(200, jSon, exchange);
 
             } else if (uri.getPath().equals("/ServidorIOT/controlePiscina")) {
-                String mens = "";
+               
                 ControlePiscina pis = getMain().getControlePiscina(); 
                 pis.retornoStatusFiltro();
                 if(pis.lerPin("17").equals("0")) {
                     pis.ligarBombaFiltro(1);
-                    mens = "{\"Status\" : \"Ligado\"}\r\n";
+                    pis.getComando().setComando(ComEnum.LIGAR);
                 }
                 else {
                     pis.ligarBombaFiltro(0);
-                    mens = "{\"Status\" : \"Desligado\"}\r\n";   
+                    pis.getComando().setComando(ComEnum.DESLIGAR);
                 }
+                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                 
-                send(200, mens, exchange);
+
+                String jSon = gson.toJson(pis.getComando());
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");                
+                send(200, jSon, exchange);
 
             } else if (uri.getPath().equals("/ServidorIOT/comando")) {
 

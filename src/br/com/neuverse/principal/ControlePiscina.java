@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import br.com.neuverse.entity.Comando;
 import br.com.neuverse.enumerador.Status;
 
 public class ControlePiscina {
@@ -21,6 +22,15 @@ public class ControlePiscina {
     final static private String on = "1";
     final static private String off = "0";
     static private boolean onByKey = false;
+    private Comando comando = new Comando();
+
+
+    public Comando getComando(){
+        return comando;
+    }
+    public void setComando(Comando arg){
+        comando = arg;
+    }
 
     public Status retornoStatusFiltro(){
         if(lerPin(filtro).equals("1")){
@@ -140,26 +150,29 @@ public class ControlePiscina {
 
                 while (true) {
                     if (lerPin(nivelBaixo).equals("1")) {
+                      
                         if (!alerta) {
+                            comando.setNivel(Status.PRESENCA_AGUA);
                             alerta = true;
-
                         }
-
                     } else {
-                        if (alerta) {
-
+                        comando.setNivel(Status.NORMAL_AGUA);
+                        if (alerta) {                             
                             ligarDreno(1);
-
                         }
                         alerta = false;
                     }
                     if (lerPin(nivelAlto).equals("1")) {
+                       
                         if (!maximo) {
+                            comando.setNivel(Status.ALERTA_AGUA);
                             maximo = true;
                             ligarDreno(0);
                         }
 
                     } else {
+                        if(comando.getNivel().equals(Status.ALERTA_AGUA))
+                            comando.setNivel(Status.PRESENCA_AGUA);
                         maximo = false;
                     }
 
