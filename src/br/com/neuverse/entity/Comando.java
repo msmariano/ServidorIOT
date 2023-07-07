@@ -9,7 +9,15 @@ public class Comando {
     //private Status stDreno;
     //private String comTo;
     private Status nivel;
+    private String mens;
 
+    public String getMens(){
+        return mens;
+    }
+
+    public void setMens(String arg){
+        mens = arg;
+    }
 
 
     public Status getNivel(){

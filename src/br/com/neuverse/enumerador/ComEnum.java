@@ -5,7 +5,9 @@ import java.util.List;
 
 public enum ComEnum {
     LIGAR(1,"Ligar"),
-    DESLIGAR(1,"Desligar");
+    DESLIGAR(2,"Desligar"),
+	LERSENSORES(3,"Ler sensores"),
+	PUSH(4,"Push");
 
     private final int valor;
 	private final String descricao;

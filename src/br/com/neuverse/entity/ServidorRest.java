@@ -1,5 +1,4 @@
-//curl  -k -X POST https://192.168.0.125:8080/ServidorIOT/controlePiscina
-
+//curl  -d '{"comando":"PUSH"}' -k -X POST https://192.168.0.125:8080/ServidorIOT/controlePiscina
 
 package br.com.neuverse.entity;
 
@@ -174,7 +173,7 @@ public class ServidorRest implements HttpHandler {
                 httpServer.setExecutor(threadPoolExecutor);
                 this.httpServer.start();
             } catch (Exception e) {
-                Log.log(this, "Falhou inicializar ServidorRestHttps:" +e.getMessage(), "DEBUG");
+                Log.log(this, "Falhou inicializar ServidorRestHttps:" + e.getMessage(), "DEBUG");
             }
         } else {
             try {
@@ -352,7 +351,7 @@ public class ServidorRest implements HttpHandler {
 
                 else if (bErro) {
                     plug.setErro("Já existe um conector com este nome na lista.");
-                    Log.log(this, "Já existe um conector com este nome na lista." ,"INFO");
+                    Log.log(this, "Já existe um conector com este nome na lista.", "INFO");
                     listaConectores.remove(conRetirar);
                     exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                     send(500, gson.toJson(plug), exchange);
@@ -406,22 +405,32 @@ public class ServidorRest implements HttpHandler {
                 send(200, jSon, exchange);
 
             } else if (uri.getPath().equals("/ServidorIOT/controlePiscina")) {
-               
-                ControlePiscina pis = getMain().getControlePiscina(); 
-                pis.retornoStatusFiltro();
-                if(pis.lerPin("17").equals("0")) {
+
+                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                Comando c = gson.fromJson(requestContent.toString(), Comando.class);
+                ControlePiscina pis = getMain().getControlePiscina();
+
+                if (c.getComando().equals(ComEnum.LIGAR)) {
                     pis.ligarBombaFiltro(1);
                     pis.getComando().setComando(ComEnum.LIGAR);
-                }
-                else {
+                } else if (c.getComando().equals(ComEnum.DESLIGAR)) {
                     pis.ligarBombaFiltro(0);
                     pis.getComando().setComando(ComEnum.DESLIGAR);
+                } else if (c.getComando().equals(ComEnum.LERSENSORES)) {
+                    pis.getComando().setComando(ComEnum.LERSENSORES);
+                } else if (c.getComando().equals(ComEnum.PUSH)) {
+                    pis.getComando().setComando(ComEnum.PUSH);
+                    if (pis.lerPin("17").equals("0")) {
+                        pis.getComando().setMens("Filtro ligado");
+                        pis.ligarBombaFiltro(1);
+                    } else {
+                        pis.getComando().setMens("Filtro desligado");
+                        pis.ligarBombaFiltro(0);
+                    }
                 }
-                Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-                
 
                 String jSon = gson.toJson(pis.getComando());
-                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");                
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                 send(200, jSon, exchange);
 
             } else if (uri.getPath().equals("/ServidorIOT/comando")) {
