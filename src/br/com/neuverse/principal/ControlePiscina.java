@@ -4,13 +4,64 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import br.com.neuverse.entity.Comando;
 import br.com.neuverse.enumerador.Status;
 
 public class ControlePiscina {
+
+    static {
+        disableSslVerification();
+    }
+
+    private static void disableSslVerification() {
+        try {
+            // Create a trust manager that does not validate certificate chains
+            TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
+
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+            }
+            };
+
+            // Install the all-trusting trust manager
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+            // Create all-trusting host name verifier
+            HostnameVerifier allHostsValid = new HostnameVerifier() {
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            };
+
+            // Install the all-trusting host verifier
+            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        }
+    }
 
     private String horarios = "00:00;04:00;08:00;12:00;16:00;20:00";
     private Integer minutos = 30;
@@ -74,15 +125,17 @@ public class ControlePiscina {
                     gpio.close();
                     SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
                     Log.log(this,"Timer iniciado as "+sdf.format(new Date()),"DEBUG");
+                     comando.setTimer(Status.OFF);
                     while (true) {
                         String t = sdf.format(new Date());
                         Thread.sleep(1000);
 
                         if (horarios.contains(t)) {
                             Log.log(this,"Ativando Filtro Bomba pelo timer.","DEBUG");
+                            comando.setTimer(Status.ON);
                             ligarBombaFiltro(1);
                             Thread.sleep(1000 * 60 * minutos);
-
+                             comando.setTimer(Status.OFF);
                             if (!onByKey) {
                                 ligarBombaFiltro(0);
                             }
@@ -93,6 +146,24 @@ public class ControlePiscina {
                 }
             }
         }.start();
+    }
+
+    public void atualizaInfo(){
+
+        comando.setStFiltro(Status.OFF);
+        comando.setMens("Filtro desligado");
+        if(lerPin(filtro).equals("1"))   {
+            comando.setStFiltro(Status.ON);
+            comando.setMens("Filtro ligado");
+        }
+
+        comando.setStDreno(Status.OFF);
+        if(lerPin(bomba).equals("0"))   {
+            comando.setStFiltro(Status.ON);
+        }
+
+
+
     }
 
     public void monitoraChave() {
@@ -219,6 +290,10 @@ public class ControlePiscina {
 
         }
         return ret;
+    }
+
+    public void iniciarClienteGpioRemoto(){
+        
     }
 
 }

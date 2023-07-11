@@ -65,6 +65,7 @@ import br.com.neuverse.entity.ServidorCfg;
 import br.com.neuverse.entity.ServidorRest;
 import br.com.neuverse.entity.Versao;
 import br.com.neuverse.entity.Device;
+import br.com.neuverse.entity.GpioRemoto;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 
@@ -72,6 +73,7 @@ public class Main {
 
 	private static ServerSocket servidor;
 	private static ServerSocket servidorWithSSL;
+	private static ServerSocket servidorGpioRemoto;
 	private static ServerSocket servidorLog;
 	private List<Conector> listaConectores = new ArrayList<>();
 	private ListaConector ctrGlobal = new ListaConector();
@@ -180,6 +182,9 @@ public class Main {
 		if(servidorWithSSL!=null){
 			mainServidor.getServidorRest().monitoraConectores(mainServidor.getServidorRest());
 			mainServidor.processarWithSSL();
+		}
+		if(servidorGpioRemoto!=null){
+			mainServidor.processarGpioRemoto();
 		}
 		for (ServidorCfg servidor : cfg.retornaServidores()) {
 			mainServidor.linkServidorRedicionamento(servidor);
@@ -447,6 +452,7 @@ public class Main {
 			servidorWithSSL = getServerSocket(serverPortDefault);
 			servidor = getServerSocket(serverPortDefault + 1);
 			servidorLog = getServerSocket(serverPortDefault + 2);			
+			servidorGpioRemoto =  getServerSocket(serverPortDefault + 3);
 		} catch (Exception e) {
 			Log.log(this, e.getMessage(), "DEBUG");
 		}		
@@ -507,6 +513,61 @@ public class Main {
 						}.start();
 
 					} catch (Exception e) {
+					}
+				}
+			}
+		}.start();
+	}
+
+	public void processarGpioRemoto() throws IOException {
+		new Thread() {
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						Socket gpioCliente;
+						gpioCliente = servidorGpioRemoto.accept();
+						gpioCliente.setKeepAlive(true);
+						Log.log(this, "GpioCliente SSL conectado: " + gpioCliente.getInetAddress().getHostAddress()
+								+ " porta " + gpioCliente.getPort(), "INFO");
+						new Thread() {
+							@Override
+							public void run() {
+								Log.log(this,
+										"Entrando GpioCliente SSL Thread ip:" + gpioCliente.getInetAddress().getHostAddress()
+												+ " porta " + gpioCliente.getPort(),
+										"INFO");
+										GpioRemoto  remoto = new GpioRemoto();
+										remoto.setSocket(gpioCliente);
+
+										Integer biotId = 1;
+										ButtonIot uBiot = null;
+										for(ButtonIot b : conector.getButtons()){
+											uBiot = b;
+										}
+										if(uBiot!=null)
+											biotId = uBiot.getButtonID()+1;
+										devices.add(remoto);
+										ButtonIot bIot = new ButtonIot();
+										bIot.setButtonID(biotId);
+										bIot.setFuncao(remoto.getFuncao());
+										bIot.setTecla(remoto.getTecla());
+										bIot.setStatus(remoto.getStatus());
+										bIot.setNomeGpio("CtrlRemotoGpio");
+										bIot.setNick(remoto.getNick());
+										remoto.toDo(bIot);
+										conector.getButtons().add(bIot);
+										Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+									   String jSon = gson.toJson(conector.getButtons());
+										conector.getIot().setjSon(jSon);
+										if(conector.getDevices()!=null)
+											conector.setDevices(devices);
+										remoto.run();
+							}
+						}.start();
+
+					} catch (Exception e) {
+						Log.log(this, e.getMessage(), "DEBUG");
 					}
 				}
 			}

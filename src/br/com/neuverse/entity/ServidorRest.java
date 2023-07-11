@@ -413,11 +413,15 @@ public class ServidorRest implements HttpHandler {
                 if (c.getComando().equals(ComEnum.LIGAR)) {
                     pis.ligarBombaFiltro(1);
                     pis.getComando().setComando(ComEnum.LIGAR);
+                    pis.getComando().setMens("Filtro ligado");
                 } else if (c.getComando().equals(ComEnum.DESLIGAR)) {
                     pis.ligarBombaFiltro(0);
+                     pis.getComando().setMens("Filtro desligado");
                     pis.getComando().setComando(ComEnum.DESLIGAR);
                 } else if (c.getComando().equals(ComEnum.LERSENSORES)) {
+                    pis.atualizaInfo();
                     pis.getComando().setComando(ComEnum.LERSENSORES);
+                    pis.getComando().setMens("");
                 } else if (c.getComando().equals(ComEnum.PUSH)) {
                     pis.getComando().setComando(ComEnum.PUSH);
                     if (pis.lerPin("17").equals("0")) {
@@ -429,6 +433,7 @@ public class ServidorRest implements HttpHandler {
                     }
                 }
 
+                pis.atualizaInfo();
                 String jSon = gson.toJson(pis.getComando());
                 exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                 send(200, jSon, exchange);

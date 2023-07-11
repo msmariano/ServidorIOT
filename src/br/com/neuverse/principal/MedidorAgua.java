@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.UIManager;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
@@ -17,12 +18,38 @@ import com.pi4j.io.gpio.trigger.GpioCallbackTrigger;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 public class MedidorAgua {
-
     
-    public static void main(String[] args) {
+    private Double pulsos = 0.0;
+    private Double volume = 0.0;
+    
+    @SuppressWarnings("deprecation")
+    public static void main(String[] args) throws IOException {
+
+
+        if (args.length > 0) {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            new MedidorAgua().inicializar();
+            return;
+
+        }
+        Runtime.getRuntime().exec("java -jar "+ (new File(MedidorAgua.class.getProtectionDomain().getCodeSource().getLocation().getPath())).getAbsolutePath() + " cmd");
+
+        
+
+        
+    }
+
+    public void inicializar(){
         System.out.println("Iniciando...");
         JFrame f = new JFrame();
         JFormattedTextField valor = new JFormattedTextField();
@@ -52,11 +79,18 @@ public class MedidorAgua {
         f.setVisible(true);
 
         final GpioController gpio = GpioFactory.getInstance();
-        final GpioPinDigitalInput sensor = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.OFF);
+        final GpioPinDigitalInput sensor = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_UP);
 
         sensor.addTrigger(new GpioCallbackTrigger(new Callable<Void>() {
             public Void call() throws Exception {
-                System.out.println(" --> GPIO TRIGGER CALLBACK RECEIVED ");
+                pulsos++;
+                //F=6.6*Q(Q=L/MIN)
+                //396 pulsos por litro
+              
+                 
+                volume = (pulsos /690);
+
+                valor.setText(String.format("%.2f", volume));
                 return null;
             }
         }));
@@ -65,19 +99,13 @@ public class MedidorAgua {
             @Override
             public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
                
-                Integer vlr = Integer.parseInt(valor.getText());
-                vlr++;
-                valor.setText(String.valueOf(vlr));
+               
                 
             }
         });
 
-        while(true) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-            }
-        }
+        
+
     }
     
 }

@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "TelaControlePiscina",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.TelaControlePiscina",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "DeParaTF",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.sia.DeParaTF",
