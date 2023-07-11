@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -22,22 +23,41 @@ public class GpioRemoto extends Device implements Runnable {
     private Integer id;
     private Object toDoObject;
     private String nick;
-    private Status funcao = Status.KEY ;
+    private Status funcao = Status.KEY;
     private Status tecla = Status.HIGH;
+    private List<ButtonIot> buttonsIots;
+    private List<Device> devices;
+    private boolean conectado = true;
 
-    public Status getFuncao(){
+    public List<Device> getDevices() {
+        return devices;
+    }
+
+    public void setDevices(List<Device> devices) {
+        this.devices = devices;
+    }
+
+    public List<ButtonIot> getButtonsIots() {
+        return buttonsIots;
+    }
+
+    public void setButtonsIots(List<ButtonIot> buttonsIots) {
+        this.buttonsIots = buttonsIots;
+    }
+
+    public Status getFuncao() {
         return funcao;
     }
 
-    public Status getTecla(){
+    public Status getTecla() {
         return tecla;
     }
 
-    public String getNick(){
+    public String getNick() {
         return nick;
     }
 
-    public void setNick(String arg){
+    public void setNick(String arg) {
         nick = arg;
     }
 
@@ -52,7 +72,7 @@ public class GpioRemoto extends Device implements Runnable {
     @Override
     public boolean on() {
         try {
-            if (socket.isConnected()) {
+            if (conectado) {
                 Comando com = new Comando();
                 com.setComando(ComEnum.LIGAR);
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
@@ -87,8 +107,8 @@ public class GpioRemoto extends Device implements Runnable {
 
     @Override
     public boolean off() {
-      try {
-            if (socket.isConnected()) {
+        try {
+            if (conectado) {
                 Comando com = new Comando();
                 com.setComando(ComEnum.DESLIGAR);
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
@@ -103,8 +123,8 @@ public class GpioRemoto extends Device implements Runnable {
 
     @Override
     public Status getStatus() {
-       try {
-            if (socket.isConnected()) {
+        try {
+            if (conectado) {
                 Comando com = new Comando();
                 com.setComando(ComEnum.LERSENSORES);
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
@@ -118,28 +138,32 @@ public class GpioRemoto extends Device implements Runnable {
 
     @Override
     public void toDo(Object obj) {
-         toDoObject = obj;
+        toDoObject = obj;
     }
 
     @Override
     public void run() {
-        while (socket.isConnected()) {
+       
+        while (conectado) {
             try {
                 entrada = new BufferedReader(
                         new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8.name()));
                 while (true) {
                     String mens = entrada.readLine();
-                    if (mens == null)
+                    if (mens == null) {
+                        conectado = false;
+                        socket.close();
                         break;
+                    }
                     Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                     Comando com = gson.fromJson(mens, Comando.class);
                     ButtonIot bIot = (ButtonIot) toDoObject;
                     bIot.setStatus(com.getDevice());
                     atualizar();
-
                 }
 
             } catch (Exception e) {
+                conectado = false;
                 try {
                     socket.close();
                 } catch (IOException e1) {
@@ -147,6 +171,8 @@ public class GpioRemoto extends Device implements Runnable {
                 }
             }
         }
+        devices.remove(this);
+        buttonsIots.remove((ButtonIot) toDoObject);
     }
 
 }

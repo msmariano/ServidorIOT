@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -55,6 +56,7 @@ import br.com.neuverse.database.Usuario;
 import br.com.neuverse.entity.ButtonGpioBananaPi;
 import br.com.neuverse.entity.ButtonGpioRaspPi;
 import br.com.neuverse.entity.ButtonIot;
+import br.com.neuverse.entity.Comando;
 import br.com.neuverse.entity.Conector;
 import br.com.neuverse.entity.ConfigIOT;
 import br.com.neuverse.entity.InfoServidor;
@@ -79,6 +81,7 @@ public class Main {
 	private ListaConector ctrGlobal = new ListaConector();
 	private List<ButtonGpioRaspPi> listaGpioButtons = new ArrayList<>();
 	private List<ButtonGpioBananaPi> listaGpioButtonsBanana = new ArrayList<>();
+	private List<GpioRemoto> listaGpioRemotos = new ArrayList<>();
 	private List<Device> devices = new ArrayList<>();
 	private List<Cliente> clientes = new ArrayList<>();
 	private List<Socket> logSocket = new ArrayList<>();
@@ -147,9 +150,13 @@ public class Main {
 			}
 			return;
 		}
-
-		String servidorNeuverse = InetAddress.getByName("rasp4msmariano.dynv6.net").toString();
-		System.out.println("Endereco servidor:"+servidorNeuverse);
+		try {
+			String servidorNeuverse = InetAddress.getByName("rasp4msmariano.dynv6.net").toString();
+			System.out.println("Endereco servidor:"+servidorNeuverse);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		
 		/*
 		 * try {
 		 * String s = Cliente.convertPasswordToMD5("pradopi");
@@ -537,7 +544,28 @@ public class Main {
 										"Entrando GpioCliente SSL Thread ip:" + gpioCliente.getInetAddress().getHostAddress()
 												+ " porta " + gpioCliente.getPort(),
 										"INFO");
+
 										GpioRemoto  remoto = new GpioRemoto();
+										Comando com = null;
+
+										try {
+											BufferedReader entrada = new BufferedReader(
+												new InputStreamReader(gpioCliente.getInputStream(), StandardCharsets.UTF_8.name()));
+											String mens = entrada.readLine();
+											if (mens == null)
+													return;
+											Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+											com = gson.fromJson(mens, Comando.class);
+											remoto.setNick(com.getNick());
+											
+										} catch (UnsupportedEncodingException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										} catch (IOException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										}
+										
 										remoto.setSocket(gpioCliente);
 
 										Integer biotId = 1;
@@ -548,17 +576,21 @@ public class Main {
 										if(uBiot!=null)
 											biotId = uBiot.getButtonID()+1;
 										devices.add(remoto);
+										remoto.setId(biotId);
+										remoto.setDevices(devices);
 										ButtonIot bIot = new ButtonIot();
 										bIot.setButtonID(biotId);
 										bIot.setFuncao(remoto.getFuncao());
 										bIot.setTecla(remoto.getTecla());
-										bIot.setStatus(remoto.getStatus());
+										bIot.setStatus(com.getDevice());
 										bIot.setNomeGpio("CtrlRemotoGpio");
-										bIot.setNick(remoto.getNick());
+										bIot.setNick(com.getNick());
 										remoto.toDo(bIot);
+										listaGpioRemotos.add(remoto);
 										conector.getButtons().add(bIot);
+										remoto.setButtonsIots(conector.getButtons());
 										Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-									   String jSon = gson.toJson(conector.getButtons());
+									    String jSon = gson.toJson(conector.getButtons());
 										conector.getIot().setjSon(jSon);
 										if(conector.getDevices()!=null)
 											conector.setDevices(devices);
@@ -601,6 +633,7 @@ public class Main {
 								cliente.setListaConectores(listaConectores);
 								cliente.setListaGpioButtons(listaGpioButtons);
 								cliente.setListaGpioButtonsBanana(listaGpioButtonsBanana);
+								cliente.setListaGpioRemotos(listaGpioRemotos);
 								cliente.setClientes(clientes);
 								cliente.run();
 								Log.log(this, "Saindo SSL Thread ip:" + cliente.getIpCliente(), "INFO");
@@ -741,7 +774,10 @@ public class Main {
 	}
 	
 	public ControlePiscina getControlePiscina(){
+		
 		return controlePiscina;
 	}
+
+	
 
 }

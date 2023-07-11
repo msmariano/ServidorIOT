@@ -12,6 +12,15 @@ public class Comando {
     private String mens;
     private Status timer;
     private Status device;
+    private String nick;
+
+    public String getNick(){
+        return nick;
+    }
+
+    public void setNick(String arg){
+        nick = arg;
+    }
 
     public Status getDevice() {
         return device;

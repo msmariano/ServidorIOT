@@ -31,6 +31,7 @@ import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.ButtonIotDevice;
 import br.com.neuverse.entity.Conector;
 import br.com.neuverse.entity.Device;
+import br.com.neuverse.entity.GpioRemoto;
 import br.com.neuverse.entity.Mensagem;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
@@ -41,6 +42,7 @@ public class Cliente implements Runnable {
 	private List<Conector> listaConectores;
 	private List<ButtonGpioRaspPi> listaGpioButtons;
 	private List<ButtonGpioBananaPi> listaGpioButtonsBanana;
+	private List<GpioRemoto> listaGpioRemotos;
 	private List<Cliente> clientes;
 	private String id;
 	public BufferedReader entrada;
@@ -198,6 +200,22 @@ public class Cliente implements Runnable {
 							break;
 					}
 				}
+				if (listaGpioRemotos.size() > 0) {
+					for (ButtonIot biot : listaBiot) {
+						for (GpioRemoto remoto : listaGpioRemotos) {
+							if (biot.getButtonID() == remoto.getId()) {
+								if (remoto.getStatus() == Status.ON) {
+									remoto.on();
+								}
+							} else {
+								remoto.off();
+							}
+						}
+						break;
+					}
+				}
+				
+
 				break;
 			}
 		}
@@ -707,6 +725,14 @@ public class Cliente implements Runnable {
 
 	public void setListaGpioButtonsBanana(List<ButtonGpioBananaPi> listaGpioButtonsBanana) {
 		this.listaGpioButtonsBanana = listaGpioButtonsBanana;
+	}
+
+	public List<GpioRemoto> getListaGpioRemotos(){
+		return listaGpioRemotos;
+	}
+
+	public void setListaGpioRemotos(List<GpioRemoto> arg ){
+		 listaGpioRemotos = arg;
 	}
 
 }

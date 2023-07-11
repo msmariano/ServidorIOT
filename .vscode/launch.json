@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "SimulaDevRemGpio",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.SimulaDevRemGpio",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "TelaControlePiscina",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.TelaControlePiscina",
