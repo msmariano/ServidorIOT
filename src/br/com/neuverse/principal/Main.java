@@ -1,7 +1,11 @@
 package br.com.neuverse.principal;
 
 //sudo java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 /home/pi/Desktop/ServidorIOT.jar
+//scp  .\ServidorIOT.jar pi@192.168.0.254:/home/pi/Desktop/
 //openssl s_client -connect localhost:27015 -showcerts
+//openssl s_client -connect 192.168.0.254:27017
+//ps -e -o pid,cmd  | grep ServidorIOT.jar | awk '{print $1}'
+//ps -e -o pid,cmd  | grep ServidorIOT.jar | awk '{print $1}'  | head -n -1 | tail -n 1
 // keytool -genkeypair -keyalg RSA -alias selfsigned -keystore servidoriothttps.jks -storepass password -validity 360 -keysize 2048
 // route add 192.168.10.0 mask 255.255.255.0 192.168.0.254
 //keytool.exe -import -file "C:\Users\msmar\OneDrive\Documentos\ipca.bcb.gov.br.crt" -keystore "ipca.bcb.gov.br.crt" -storepass "changeit"
@@ -98,10 +102,26 @@ public class Main {
 	private ServidorRest servidorRestNoSSL = new ServidorRest(true, portaRest);
 	private ControlePiscina controlePiscina = null;
 
+
+ 	@SuppressWarnings("deprecation")
 	public static void main(String[] args) throws IOException, SQLException {
 
-		System.out.println("Total parametros:"+args.length);
+		//System.out.println("Total parametros:"+args.length);
 		if (args.length > 0) {
+
+			if (args[0].equals("reset")) {
+				try {
+					System.out.println("Executando reset");
+					Runtime run = Runtime.getRuntime();
+					//run.exec("ps -e -o pid,cmd  | grep ServidorIOT.jar | awk '{print $1}' > /home/pi/Desktop/pid.txt");
+					run.exec(args[1]);
+					return;
+				} catch (Exception e) {
+					System.out.println(e.getMessage());
+				}
+			}
+
+
 			if (args[0].equals("confiot")) {
 				try {
 					ConfiguraIOT.main(null);
@@ -338,12 +358,13 @@ public class Main {
 										.create();
 								String textJson = gson.toJson(conectorAlive);
 								cliente.println(textJson);
+								Log.log(this, "Enviando alive!", "DEBUG");
 								synchronized (cliente.getEventObj()) {
 									cliente.getEventObj().wait(50000);
 									if (cliente.getIsAlive()) {
-										Log.log(this, "Servidor conectado", "DEBUG");										
+										Log.log(this, "Retorno alive!", "DEBUG");										
 									} else {
-										Log.log(this, "Servidor timeout", "DEBUG");
+										Log.log(this, "Alive timeout", "DEBUG");
 										cliente.getSocketCliente().close();
 										break;
 									}										
