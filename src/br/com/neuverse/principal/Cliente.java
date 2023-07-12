@@ -61,7 +61,7 @@ public class Cliente implements Runnable {
 				break;
 			case CONECTADO:
 				isAlive = true;
-				synchronized(eventObj) {
+				synchronized (eventObj) {
 					eventObj.notifyAll();
 				}
 				break;
@@ -81,9 +81,9 @@ public class Cliente implements Runnable {
 				break;
 			case LOGIN:
 				processarLogin(con);
-				if(isLogado){
+				if (isLogado) {
 					isAlive = true;
-					synchronized(eventObj) {
+					synchronized (eventObj) {
 						eventObj.notifyAll();
 					}
 				}
@@ -115,7 +115,7 @@ public class Cliente implements Runnable {
 				for (Cliente cliente : clientes) {
 					if (cliente.getIsLogado()) {
 						Log.log(cliente, "[" + cliente.getNickName() + "]enviando atualizacao de status", "DEBUG");
-						if(cliente!=this)
+						if (cliente != this)
 							cliente.enviarAtualizar(con);
 					}
 				}
@@ -127,9 +127,9 @@ public class Cliente implements Runnable {
 
 	public void processarNotificarNetwork(Conector con) {
 		Log.log(this, "NOTIFICACAO NETWORK", "DEBUG");
-		
-		for(Conector ctr : listaConectores){
-			if(ctr.getIdConector().equals(con.getIdConector())){
+
+		for (Conector ctr : listaConectores) {
+			if (ctr.getIdConector().equals(con.getIdConector())) {
 				for (ButtonIot b : con.getButtons()) {
 					for (ButtonIot bOwn : ctr.getButtons()) {
 						if (bOwn.getButtonID().equals(b.getButtonID())) {
@@ -142,7 +142,6 @@ public class Cliente implements Runnable {
 			}
 		}
 
-		
 		Log.log(this, "atualizando status device", "DEBUG");
 		if (clientes != null) {
 			try {
@@ -214,7 +213,6 @@ public class Cliente implements Runnable {
 						break;
 					}
 				}
-				
 
 				break;
 			}
@@ -248,7 +246,7 @@ public class Cliente implements Runnable {
 			new Thread() {
 				@Override
 				public void run() {
-					try{
+					try {
 						sleep(30000);
 						conector.setStatus(Status.CONECTADO);
 						conectorCliente.setStatus(Status.CONECTADO);
@@ -257,15 +255,14 @@ public class Cliente implements Runnable {
 						mensagem.setMens(sdf.format(new Date()));
 						conector.setMens(mensagem);
 						Gson gson = new GsonBuilder()
-							.setDateFormat("dd/MM/yyyy HH:mm:ss")
-							.excludeFieldsWithoutExposeAnnotation()
-							.create();
+								.setDateFormat("dd/MM/yyyy HH:mm:ss")
+								.excludeFieldsWithoutExposeAnnotation()
+								.create();
 						String jSon = gson.toJson(conector);
 						println(jSon);
 						Log.log(this, "Alive:" + conector.getNome() + " " + conector.getMens().getMens(), "INFO");
 						timeAlive = LocalDateTime.now();
-					}
-					catch(Exception e){
+					} catch (Exception e) {
 					}
 				}
 			}.start();
@@ -300,37 +297,47 @@ public class Cliente implements Runnable {
 		isLogado = usuario.obterPorUsuarioSenha();
 		if (isLogado) {
 			Log.log(this, "login com sucesso! " + conector.getNome(), "DEBUG");
-			if (!conector.getTipo().equals(TipoIOT.NETWORK)) {
-				Log.log(this, "Removendo conector anterior se existir ", "DEBUG");
-				for (Conector con : listaConectores) {
-					if (con.getMac().equals(conector.getMac())) {
-						listaConectores.remove(con);
-						break;
-					}
-				}
-			} else {
-				//Remover conectores trazidos pela rede
-				for (Conector conNet : conector.getConectores()) {
+			try {
+				if (!conector.getTipo().equals(TipoIOT.NETWORK)) {
+					Log.log(this, "Removendo conector anterior se existir ", "DEBUG");
 					for (Conector con : listaConectores) {
-						if (conNet.getMac().equals(con.getMac())) {
-							listaConectores.remove(con);
+						if (con.getMac()!=null&&conector.getMac()!=null&&con.getMac().equals(conector.getMac())) {
+							if(listaConectores!=null)
+								listaConectores.remove(con);
 							break;
 						}
 					}
-				}				
-				listaConectores.addAll(conector.getConectores());
-			}
-			if (!conector.getTipo().equals(TipoIOT.NETWORK)) 
-				listaConectores.add(conector);
-			else{
-				for (Conector con : listaConectores) {
-					if (con.getTipo().equals(TipoIOT.NETWORK)) {
-						try {
-							con.getCliente().getSocketCliente().close();
-						} catch (IOException e) {
+				} else {
+					// Remover conectores trazidos pela rede
+					for (Conector conNet : conector.getConectores()) {
+						for (Conector con : listaConectores) {
+							if (conNet.getMac().equals(con.getMac())) {
+								listaConectores.remove(con);
+								break;
+							}
 						}
 					}
-				}	
+					listaConectores.addAll(conector.getConectores());
+				}
+			} catch (Exception e) {
+				Log.log(this, "Removendo anterior:" + e.getMessage(), "DEBUG");
+			}
+
+			try {
+				if (!conector.getTipo().equals(TipoIOT.NETWORK))
+					listaConectores.add(conector);
+				else {
+					for (Conector con : listaConectores) {
+						if (con.getTipo().equals(TipoIOT.NETWORK)) {
+							try {
+								con.getCliente().getSocketCliente().close();
+							} catch (IOException e) {
+							}
+						}
+					}
+				}
+			} catch (Exception e) {
+				Log.log(this, "acrescentando listaConectores" + e.getMessage(), "DEBUG");
 			}
 
 			conectorCliente = conector;
@@ -398,7 +405,7 @@ public class Cliente implements Runnable {
 		} else {
 			timeAlive = LocalDateTime.now();
 			if (conector.getTipo() != null && !conector.getTipo().equals(TipoIOT.HUMAN)
-				&& !conector.getTipo().equals(TipoIOT.NETWORK)) {
+					&& !conector.getTipo().equals(TipoIOT.NETWORK)) {
 				new Thread() {
 					@Override
 					public void run() {
@@ -466,8 +473,8 @@ public class Cliente implements Runnable {
 		else
 			Log.log(this, "Cliente desconectando!", "DEBUG");
 
-		if(conectorCliente.getTipo().equals(TipoIOT.NETWORK)){
-			//Remover conectores trazidos pela rede
+		if (conectorCliente.getTipo() != null && conectorCliente.getTipo().equals(TipoIOT.NETWORK)) {
+			// Remover conectores trazidos pela rede
 			for (Conector conNet : conectorCliente.getConectores()) {
 				for (Conector con : listaConectores) {
 					if (conNet.getMac().equals(con.getMac())) {
@@ -482,7 +489,7 @@ public class Cliente implements Runnable {
 			Log.log(this, "Removendo conector:" + conectorCliente.getNome(), "INFO");
 			listaConectores.remove(conectorCliente);
 		}
-		if(!conectorCliente.getTipo().equals(TipoIOT.NETWORK)){
+		if (!conectorCliente.getTipo().equals(TipoIOT.NETWORK)) {
 			for (Conector con : listaConectores) {
 				if (con.getTipo().equals(TipoIOT.NETWORK)) {
 					try {
@@ -490,12 +497,14 @@ public class Cliente implements Runnable {
 					} catch (IOException e) {
 					}
 				}
-			}	
-		}		
-
+			}
+		}
 
 		Log.log(this, "Cliente:" + nickName + " deslogado", "DEBUG");
 		clientes.remove(this);
+		Cliente cl = (Cliente) this;
+		cl = null;
+
 	}
 
 	public synchronized void println(String mens) {
@@ -523,8 +532,8 @@ public class Cliente implements Runnable {
 	public void processarBTN(Conector plug) {
 		try {
 			Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
-				.setDateFormat("dd/MM/yyyy HH:mm:ss")
-				.create();
+					.setDateFormat("dd/MM/yyyy HH:mm:ss")
+					.create();
 			for (Conector con : listaConectores) {
 				if (con.getNome().equals(plug.getNome())) {
 					int tDevice = 0;
@@ -561,24 +570,24 @@ public class Cliente implements Runnable {
 	}
 
 	public synchronized void enviarAtualizar(Conector conEnviar) {
-		if(conectorCliente!=null){
-			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN) || 
-				conectorCliente.getTipo().equals(TipoIOT.NETWORK)){
-				
-				Log.log(this,"idConectorCliente"+conectorCliente.getIdConector(),"DEBUG");
-				Log.log(this,"idConectorEnviar"+conEnviar.getIdConector(),"DEBUG");
+		if (conectorCliente != null) {
+			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN) ||
+					conectorCliente.getTipo().equals(TipoIOT.NETWORK)) {
 
-				if(!conEnviar.getIdConector().equals(conectorCliente.getIdConector())){
+				Log.log(this, "idConectorCliente" + conectorCliente.getIdConector(), "DEBUG");
+				Log.log(this, "idConectorEnviar" + conEnviar.getIdConector(), "DEBUG");
+
+				if (!conEnviar.getIdConector().equals(conectorCliente.getIdConector())) {
 					Log.log(this, "atualizando:" + nickName, "DEBUG");
 					Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
 							.setDateFormat("dd/MM/yyyy HH:mm:ss")
 							.create();
-					if(conectorCliente.getTipo().equals(TipoIOT.HUMAN))
+					if (conectorCliente.getTipo().equals(TipoIOT.HUMAN))
 						conEnviar.setStatus(Status.NOTIFICACAO);
 					else if (conectorCliente.getTipo().equals(TipoIOT.NETWORK))
 						conEnviar.setStatus(Status.NOTIFICACAO_NETWORK);
 					String jSon = gson.toJson(conEnviar);
-					Log.log(this,"json de atualizacao:"+jSon,"DEBUG");
+					Log.log(this, "json de atualizacao:" + jSon, "DEBUG");
 					BufferedWriter saida;
 					try {
 						saida = new BufferedWriter(new OutputStreamWriter(socketCliente.getOutputStream()));
@@ -593,8 +602,8 @@ public class Cliente implements Runnable {
 	}
 
 	public synchronized void enviarAtualizarNetwork(Conector conEnviar) {
-		if(conectorCliente!=null){
-			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN)){
+		if (conectorCliente != null) {
+			if (conectorCliente.getTipo().equals(TipoIOT.HUMAN)) {
 				Log.log(this, "atualizando:" + nickName, "DEBUG");
 				Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
 						.setDateFormat("dd/MM/yyyy HH:mm:ss")
@@ -727,12 +736,12 @@ public class Cliente implements Runnable {
 		this.listaGpioButtonsBanana = listaGpioButtonsBanana;
 	}
 
-	public List<GpioRemoto> getListaGpioRemotos(){
+	public List<GpioRemoto> getListaGpioRemotos() {
 		return listaGpioRemotos;
 	}
 
-	public void setListaGpioRemotos(List<GpioRemoto> arg ){
-		 listaGpioRemotos = arg;
+	public void setListaGpioRemotos(List<GpioRemoto> arg) {
+		listaGpioRemotos = arg;
 	}
 
 }

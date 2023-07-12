@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -41,99 +42,38 @@ public class ControlePiscina {
     final static private String on = "1";
     final static private String off = "0";
     static private boolean onByKey = false;
+    private SSLSocket socket;
+    private boolean conectado = false;
+
     private Comando comando = new Comando();
 
-
-    public Comando getComando(){
+    public Comando getComando() {
         return comando;
     }
-    public void setComando(Comando arg){
+
+    public void setComando(Comando arg) {
         comando = arg;
     }
 
-    public Status retornoStatusFiltro(){
-        if(lerPin(filtro).equals("1")){
+    public Status retornoStatusFiltro() {
+        if (lerPin(filtro).equals("1")) {
             return Status.ON;
         }
         return Status.OFF;
     }
 
-
-    public void inicializar(){
+    public void inicializar() {
         monitoraAgua();
         ligarBombaFiltro(0);
         monitoraChave();
-        timer(null,null);
-
-        try {
-           clienteServidorIot("Filtro");
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-    }
-
-
-    public void clienteServidorIot(String sensor) throws JsonSyntaxException, IOException, NoSuchAlgorithmException, KeyManagementException {
-        TrustManager[] trustAllCerts = { new X509TrustManager() {
-            public X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-
-            public void checkClientTrusted(X509Certificate[] certs, String authType) {
-            }
-
-            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-            }
-        } };
-
-        SSLContext sc = SSLContext.getInstance("SSL");
-        sc.init(null, trustAllCerts, new SecureRandom());
-        SSLSocketFactory factory = (SSLSocketFactory) sc.getSocketFactory();
-
-        // SSLSocketFactory factory = (SSLSocketFactory)
-        SSLSocketFactory.getDefault();
-        SSLSocket socket = (SSLSocket) factory.createSocket("192.168.0.254", 27018);
-
-        PrintWriter out = new PrintWriter(
-                new BufferedWriter(
-                        new OutputStreamWriter(
-                                socket.getOutputStream())));
-
-        Comando com = new Comando();
-        com.setDevice(Status.OFF);
-        com.setNick(sensor);
-        Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-        String jSon = gson.toJson(com);
-        out.println(jSon);
-        out.flush();
-        if (out.checkError())
-            System.out.println("SSLSocketClient:  java.io.PrintWriter error");
-
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(
-                        socket.getInputStream()));
-
-        while (true) {   
-
-            String inputLine;
-            while ((inputLine = in.readLine()) != null)
-            {
-               com =  gson.fromJson(inputLine, Comando.class);
-               if(com.getComando().equals(ComEnum.LIGAR)){
-                    if(sensor.equals("Filtro")){
-                        ligarBombaFiltro(1);
-                    }
-               }
-               else if(com.getComando().equals(ComEnum.DESLIGAR)){
-                     if(sensor.equals("Filtro")){
-                        ligarBombaFiltro(0);
-                    }
-               }
-            }
-
-        }
+        timer(null, null);
+        new ScktCom("Filtro",false,"17","out").inicializar();
+        new ScktCom("Dreno",true,"10","out").inicializar();
+        
 
     }
+
+    
 
     public void timer(String hor, Integer min) {
 
@@ -143,7 +83,7 @@ public class ControlePiscina {
         if (min != null) {
             minutos = min;
         }
-        Log.log(this,"Timer Ativado para os horários:" + horarios + " por " + minutos + " minuto(s)","DEBUG");
+        Log.log(this, "Timer Ativado para os horários:" + horarios + " por " + minutos + " minuto(s)", "DEBUG");
 
         new Thread() {
             @Override
@@ -155,51 +95,50 @@ public class ControlePiscina {
                         gpio.write(String.valueOf(17));
                         gpio.close();
                     } catch (Exception e) {
-                        
+
                     }
                     gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/gpio17/direction", false));
                     gpio.write("out");
                     gpio.close();
                     SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-                    Log.log(this,"Timer iniciado as "+sdf.format(new Date()),"DEBUG");
-                     comando.setTimer(Status.OFF);
+                    Log.log(this, "Timer iniciado as " + sdf.format(new Date()), "DEBUG");
+                    comando.setTimer(Status.OFF);
                     while (true) {
                         String t = sdf.format(new Date());
                         Thread.sleep(1000);
 
                         if (horarios.contains(t)) {
-                            Log.log(this,"Ativando Filtro Bomba pelo timer.","DEBUG");
+                            Log.log(this, "Ativando Filtro Bomba pelo timer.", "DEBUG");
                             comando.setTimer(Status.ON);
                             ligarBombaFiltro(1);
                             Thread.sleep(1000 * 60 * minutos);
-                             comando.setTimer(Status.OFF);
+                            comando.setTimer(Status.OFF);
                             if (!onByKey) {
                                 ligarBombaFiltro(0);
                             }
                         }
                     }
                 } catch (Exception e) {
-                    Log.log(this,"Timer "+e.getMessage(),"ERROR");
+                    Log.log(this, "Timer " + e.getMessage(), "ERROR");
                 }
             }
         }.start();
     }
 
-    public void atualizaInfo(){
+    public void atualizaInfo() {
 
         comando.setStFiltro(Status.OFF);
         comando.setMens("Filtro desligado");
-        if(lerPin(filtro).equals("1"))   {
+        if (lerPin(filtro).equals("1")) {
             comando.setStFiltro(Status.ON);
             comando.setMens("Filtro ligado");
         }
 
         comando.setStDreno(Status.OFF);
-        if(lerPin(bomba).equals("0"))   {
-            comando.setStFiltro(Status.ON);
+        if (lerPin(bomba).equals("0")) {
+            comando.setStDreno(Status.ON);
+            comando.setMens(comando.getMens()+" Dreno ligado");
         }
-
-
 
     }
 
@@ -258,20 +197,20 @@ public class ControlePiscina {
 
                 while (true) {
                     if (lerPin(nivelBaixo).equals("1")) {
-                      
+
                         if (!alerta) {
                             comando.setNivel(Status.PRESENCA_AGUA);
                             alerta = true;
                         }
                     } else {
                         comando.setNivel(Status.NORMAL_AGUA);
-                        if (alerta) {                             
+                        if (alerta) {
                             ligarDreno(1);
                         }
                         alerta = false;
                     }
                     if (lerPin(nivelAlto).equals("1")) {
-                       
+
                         if (!maximo) {
                             comando.setNivel(Status.ALERTA_AGUA);
                             maximo = true;
@@ -279,7 +218,7 @@ public class ControlePiscina {
                         }
 
                     } else {
-                        if(comando.getNivel().equals(Status.ALERTA_AGUA))
+                        if (comando.getNivel().equals(Status.ALERTA_AGUA))
                             comando.setNivel(Status.PRESENCA_AGUA);
                         maximo = false;
                     }
@@ -316,7 +255,7 @@ public class ControlePiscina {
         }
     }
 
-    public  String lerPin(String pin) {
+    public String lerPin(String pin) {
         String ret = null;
 
         try {

@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -20,6 +21,15 @@ public class GpioRemoto extends Device implements Runnable {
 
     private Socket socket;
     public BufferedReader entrada;
+    private Conector con;
+    public Conector getCon() {
+        return con;
+    }
+
+    public void setCon(Conector con) {
+        this.con = con;
+    }
+
     private Integer id;
     private Object toDoObject;
     private String nick;
@@ -72,26 +82,40 @@ public class GpioRemoto extends Device implements Runnable {
     @Override
     public boolean on() {
         try {
-            if (conectado) {
+            Log.log(this,"GpioRemoto send ON "+id,"DEBUG");
+           // if (conectado) {
                 Comando com = new Comando();
                 com.setComando(ComEnum.LIGAR);
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                 println(gson.toJson(com));
                 return true;
-            }
+            //}
         } catch (Exception e) {
+                Log.log(this,"GpioRemoto send ON "+e.getMessage(),"DEBUG");
         }
         return false;
     }
-
-    public synchronized void println(String mens) {
-        BufferedWriter saida;
+    //synchronized
+    public  void println(String mens) {
+        
+       // BufferedWriter saida;
         try {
-            saida = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            saida.write(mens + "\r\n");
-            saida.flush();
-        } catch (IOException e) {
+             Log.log(this,"println mens "+nick+" "+mens,"DEBUG");
+            PrintWriter out = new PrintWriter(
+                new BufferedWriter(
+                        new OutputStreamWriter(
+                                socket.getOutputStream())));
 
+                                out.println(mens);
+                                out.flush();
+
+
+           
+            /*saida = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            saida.write(mens + "\r\n");
+            saida.flush();*/
+        } catch (IOException e) {
+            Log.log(this,"println "+e.getMessage(),"DEBUG");
         }
     }
 
@@ -108,14 +132,16 @@ public class GpioRemoto extends Device implements Runnable {
     @Override
     public boolean off() {
         try {
-            if (conectado) {
+            Log.log(this,"GpioRemoto send OFF "+id,"DEBUG");
+            //if (conectado) {
                 Comando com = new Comando();
                 com.setComando(ComEnum.DESLIGAR);
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                 println(gson.toJson(com));
                 return true;
-            }
+            //}
         } catch (Exception e) {
+            Log.log(this,"GpioRemoto send OFF "+e.getMessage(),"DEBUG");
         }
         return false;
 
@@ -146,10 +172,13 @@ public class GpioRemoto extends Device implements Runnable {
        
         while (conectado) {
             try {
+
                 entrada = new BufferedReader(
                         new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8.name()));
+                Log.log(this,"Iniciando gpioremoto "+nick,"DEBUG");
                 while (true) {
                     String mens = entrada.readLine();
+                    Log.log(this,"mens gpio remoto:"+mens,"DEBUG");
                     if (mens == null) {
                         conectado = false;
                         socket.close();
@@ -158,8 +187,18 @@ public class GpioRemoto extends Device implements Runnable {
                     Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                     Comando com = gson.fromJson(mens, Comando.class);
                     ButtonIot bIot = (ButtonIot) toDoObject;
-                    bIot.setStatus(com.getDevice());
-                    atualizar();
+                    bIot.setStatus(com.getDevice());                    
+                    try {
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                atualizar();
+                            }
+                        }.start();
+                    }
+                    catch(Exception e){
+                        
+                    }
                 }
 
             } catch (Exception e) {
@@ -171,7 +210,9 @@ public class GpioRemoto extends Device implements Runnable {
                 }
             }
         }
+        Log.log(this,"Removendo GpioRemoto listas","DEBUG");
         devices.remove(this);
+        con.getDevices().remove(this);
         buttonsIots.remove((ButtonIot) toDoObject);
     }
 

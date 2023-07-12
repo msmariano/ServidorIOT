@@ -576,8 +576,11 @@ public class Main {
 										if(uBiot!=null)
 											biotId = uBiot.getButtonID()+1;
 										devices.add(remoto);
+										remoto.setConectores(listaConectores);
+										remoto.setClientes(clientes);
 										remoto.setId(biotId);
 										remoto.setDevices(devices);
+										conector.getDevices().add(remoto);
 										ButtonIot bIot = new ButtonIot();
 										bIot.setButtonID(biotId);
 										bIot.setFuncao(remoto.getFuncao());
@@ -592,8 +595,9 @@ public class Main {
 										Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
 									    String jSon = gson.toJson(conector.getButtons());
 										conector.getIot().setjSon(jSon);
-										if(conector.getDevices()!=null)
-											conector.setDevices(devices);
+										//f(conector.getDevices()!=null)
+										//	conector.setDevices(devices);
+										remoto.setCon(conector);
 										remoto.run();
 							}
 						}.start();

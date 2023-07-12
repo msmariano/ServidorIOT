@@ -51,38 +51,44 @@ public abstract class Device {
         boolean parar = false;
         for (Conector conector : conectores) {
             for (Device device : conector.getDevices()) {
-                Log.log(this, "listando device:"+device.toString(), "DEBUG");
+                Log.log(this, "listando device:" + device.toString(), "DEBUG");
                 if (device.equals(this)) {
                     conEnviar = conector;
-                    Log.log(this, "Encontrou device:"+this.toString(), "DEBUG");
+                    Log.log(this, "Encontrou device:" + this.toString(), "DEBUG");
                     parar = true;
                     break;
                 }
             }
-            if(parar)
+            if (parar)
                 break;
         }
         if (clientes != null) {
             String jSon = "";
-            if(conEnviar!=null){
+            if (conEnviar != null) {
                 Gson gson = new GsonBuilder()
-			        .setDateFormat("dd/MM/yyyy HH:mm:ss")
-                    .excludeFieldsWithoutExposeAnnotation()
-                    .create();
-                jSon = gson.toJson(conEnviar,Conector.class);
+                        .setDateFormat("dd/MM/yyyy HH:mm:ss")
+                        .excludeFieldsWithoutExposeAnnotation()
+                        .create();
+                jSon = gson.toJson(conEnviar, Conector.class);
             }
-            Log.log(this,"achou numero de clientes "+clientes.size(), "DEBUG");
-            try {
-                for (Cliente cliente : clientes) {
-                    Log.log(this,"Enviando notificacao para cliente["+jSon+"] "+ cliente.getNickName(),"DEBUG");
-                    if (cliente.getIsLogado()) {
-                        Log.log(this, "[" + cliente.getNickName() + "]enviando atualizacao de status", "DEBUG");
-                        cliente.enviarAtualizar(conEnviar);
+            Log.log(this, "achou numero de clientes " + clientes.size(), "DEBUG");
+
+            for (Cliente cliente : clientes) {
+                if (cliente.getNickName() != null&&!cliente.getSocketCliente().isClosed()) {
+                    Log.log(this, "Lendo cliente[" + cliente + "]:" + cliente.getNickName(), "DEBUG");
+                    try {
+                        Log.log(this, "Enviando notificacao para cliente[" + jSon + "] " + cliente.getNickName(),
+                                "DEBUG");
+                        if (cliente.getIsLogado()) {
+                            Log.log(this, "[" + cliente.getNickName() + "]enviando atualizacao de status", "DEBUG");
+                            cliente.enviarAtualizar(conEnviar);
+                        }
+                    } catch (Exception e) {
+                        Log.log(this, "atualizar()" + e.getMessage(), "DEBUG");
                     }
                 }
-            } catch (Exception e) {
-                Log.log(this, "atualizar()" + e.getMessage(), "DEBUG");
             }
+
         }
     }
 }
