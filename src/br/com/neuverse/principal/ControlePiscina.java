@@ -63,17 +63,22 @@ public class ControlePiscina {
     }
 
     public void inicializar() {
+
+        ativarPin(nivelAlto, "in");
+        ativarPin(nivelBaixo, "in");
+        ativarPin(chave, "in");
+        ativarPin(bomba, "out");
+        ativarPin(filtro, "out");
+        escreverPin(bomba, on);
+        escreverPin(filtro, off);
         monitoraAgua();
         ligarBombaFiltro(0);
         monitoraChave();
         timer(null, null);
-        new ScktCom("Filtro",false,"17","out").inicializar();
-        new ScktCom("Dreno",true,"10","out").inicializar();
-        
+        new ScktCom("Filtro", false, "17", "out").inicializar();
+        new ScktCom("Dreno", true, "10", "out").inicializar();
 
     }
-
-    
 
     public void timer(String hor, Integer min) {
 
@@ -83,7 +88,7 @@ public class ControlePiscina {
         if (min != null) {
             minutos = min;
         }
-        Log.log(this, "Timer Ativado para os hor√°rios:" + horarios + " por " + minutos + " minuto(s)", "DEBUG");
+        Log.log(this, "Timer Ativado para os hor·rios:" + horarios + " por " + minutos + " minuto(s)", "DEBUG");
 
         new Thread() {
             @Override
@@ -137,7 +142,7 @@ public class ControlePiscina {
         comando.setStDreno(Status.OFF);
         if (lerPin(bomba).equals("0")) {
             comando.setStDreno(Status.ON);
-            comando.setMens(comando.getMens()+" Dreno ligado");
+            comando.setMens(comando.getMens() + " Dreno ligado");
         }
 
     }
@@ -266,6 +271,27 @@ public class ControlePiscina {
 
         }
         return ret;
+    }
+
+    public void ativarPin(String pin, String direcao) {
+
+        try {
+            BufferedWriter gpio = null;
+            try {
+                gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/export", true));
+                gpio.write(pin);
+                gpio.close();
+            } catch (Exception e) {
+            }
+
+            System.out.println("Ativando pin " + pin + " para " + direcao);
+            gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/gpio" + pin + "/direction", false));
+            gpio.write(direcao);
+            gpio.close();
+        } catch (Exception e) {
+
+        }
+
     }
 
 }
