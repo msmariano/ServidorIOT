@@ -18,20 +18,23 @@ public class ControleRest {
 
     public ComandoIOT sendRest(String jSon) throws Exception {
        
-        URL url = new URL("http://"+ip);
+        URL url = new URL("https://"+ip);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(HttpMethod.POST);
         con.setRequestProperty("Content-Type", "application/json");
         con.setRequestProperty("Host", ip);
         con.setRequestProperty("Connection", "Keep-Alive");
-        con.setRequestProperty("Content-Length", String.valueOf(jSon.length()));
+        if(jSon!=null&&jSon.length()>0)
+            con.setRequestProperty("Content-Length", String.valueOf(jSon.length()));
         con.setRequestProperty("Accept", "*/*");
         con.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
         con.setDoOutput(true);
         
         try(OutputStream os = con.getOutputStream()) {
-            byte[] input = jSon.getBytes();
-            os.write(input, 0, jSon.length());			
+            if(jSon!=null&&jSon.length()>0){
+                byte[] input = jSon.getBytes();
+                os.write(input, 0, jSon.length());	
+            }		
         }
         int responseCode = con.getResponseCode();
 

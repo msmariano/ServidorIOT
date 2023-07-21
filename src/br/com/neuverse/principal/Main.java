@@ -1,6 +1,7 @@
 package br.com.neuverse.principal;
 
 //sudo java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 /home/pi/Desktop/ServidorIOT.jar
+
 //scp  .\ServidorIOT.jar pi@192.168.0.254:/home/pi/Desktop/
 //openssl s_client -connect localhost:27015 -showcerts
 //openssl s_client -connect 192.168.0.254:27017
@@ -9,7 +10,7 @@ package br.com.neuverse.principal;
 // keytool -genkeypair -keyalg RSA -alias selfsigned -keystore servidoriothttps.jks -storepass password -validity 360 -keysize 2048
 // route add 192.168.10.0 mask 255.255.255.0 192.168.0.254
 //keytool.exe -import -file "C:\Users\msmar\OneDrive\Documentos\ipca.bcb.gov.br.crt" -keystore "ipca.bcb.gov.br.crt" -storepass "changeit"
-//ssh-keygen(sem senha) cat ~/.ssh/id_rsa.pub | ssh pi@192.168.10.254 "mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && chmod -R go= ~/.ssh && cat >> ~/.ssh/authorized_keys"
+//ssh-keygen(sem senha) cat ~/.ssh/id_rsa.pub | ssh pi@192.168.18.254 "mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && chmod -R go= ~/.ssh && cat >> ~/.ssh/authorized_keys"
 // scp .\ServidorIOT-1.jar pi@192.168.10.76:/home/pi
 
 import java.io.BufferedInputStream;
@@ -37,6 +38,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -52,8 +54,11 @@ import javax.net.ssl.TrustManagerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.pi4j.io.gpio.GpioFactory;
+import com.pi4j.io.i2c.I2CFactory;
 import com.pi4j.platform.Platform;
 import com.pi4j.platform.PlatformManager;
+import com.pi4j.wiringpi.I2C;
 
 import br.com.neuverse.database.Configuracao;
 import br.com.neuverse.database.Usuario;
@@ -74,6 +79,8 @@ import br.com.neuverse.entity.Device;
 import br.com.neuverse.entity.GpioRemoto;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
+import de.pi3g.pi.oled.Font;
+import de.pi3g.pi.oled.OLEDDisplay;
 
 public class Main {
 
@@ -101,19 +108,63 @@ public class Main {
 	private ServidorRest servidorRest = new ServidorRest(true, portaSSLRest);
 	private ServidorRest servidorRestNoSSL = new ServidorRest(true, portaRest);
 	private ControlePiscina controlePiscina = null;
+	private OLEDDisplay display;
+	private String linhasDisplay [] = new String[5];
+	
+
+	public Conector getConector(){
+		return this.conector;
+	}
 
 
- 	@SuppressWarnings("deprecation")
+	public String[] getLinhasDisplay() {
+		return linhasDisplay;
+	}
+
+	public void setLinhasDisplay(String[] linhasDisplay) {
+		this.linhasDisplay = linhasDisplay;
+	}
+
+	@SuppressWarnings("deprecation")
 	public static void main(String[] args) throws IOException, SQLException {
 
-		//System.out.println("Total parametros:"+args.length);
+		// System.out.println("Total parametros:"+args.length);
 		if (args.length > 0) {
+
+			if (args[0].equals("oled")) {
+				/*try {
+					System.out.println("Testando OLED");
+					Versao v = new Versao();
+					OLEDDisplay display = new OLEDDisplay(0, 60);
+					
+					SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+					while (true) {
+						Thread.sleep(1000);
+						display.clear();
+						display.drawString("ServidorIOT "+v.getVersao(),  Font.FONT_5X8, 0, 0, true);
+						display.drawString(sdf.format(new Date()),  Font.FONT_5X8, 0, 10, true);
+						display.update();
+					}
+				} catch (Exception e) {
+					System.out.println(e.getMessage());
+				}*/
+				return;
+
+			}
+
+			if (args[0].equals("ver")) {
+				Versao v = new Versao();
+				System.out.print(v.ver());
+				return;
+
+			}
 
 			if (args[0].equals("reset")) {
 				try {
 					System.out.println("Executando reset");
 					Runtime run = Runtime.getRuntime();
-					//run.exec("ps -e -o pid,cmd  | grep ServidorIOT.jar | awk '{print $1}' > /home/pi/Desktop/pid.txt");
+					// run.exec("ps -e -o pid,cmd | grep ServidorIOT.jar | awk '{print $1}' >
+					// /home/pi/Desktop/pid.txt");
 					run.exec(args[1]);
 					return;
 				} catch (Exception e) {
@@ -121,50 +172,44 @@ public class Main {
 				}
 			}
 
-
 			if (args[0].equals("confiot")) {
 				try {
 					ConfiguraIOT.main(null);
 				} catch (Exception e) {
 				}
-			}
-			else if (args[0].equals("testepi")) {
-				try{
-					ButtonGpioBananaPi btn = new ButtonGpioBananaPi(Integer.parseInt(args[2]), -1, -1, 1,"",2);
-					if(args[1].equals("on"))
+			} else if (args[0].equals("testepi")) {
+				try {
+					ButtonGpioBananaPi btn = new ButtonGpioBananaPi(Integer.parseInt(args[2]), -1, -1, 1, "", 2);
+					if (args[1].equals("on"))
 						btn.on();
-					else if(args[1].equals("off"))
+					else if (args[1].equals("off"))
 						btn.off();
-				}
-				catch(Exception e){
+				} catch (Exception e) {
 					System.out.println(e.getMessage());
 				}
 
-			}
-			else if (args[0].equals("testepile")) {
-				try{
-					try{
-						System.out.println("Lendo Gpio"+args[1]);
-						String gpioNameOut = "gpio"+args[1];
-						BufferedReader le = new BufferedReader(new FileReader("/sys/class/gpio/"+gpioNameOut+"/value"));
-						char b[] =new char[10];
+			} else if (args[0].equals("testepile")) {
+				try {
+					try {
+						System.out.println("Lendo Gpio" + args[1]);
+						String gpioNameOut = "gpio" + args[1];
+						BufferedReader le = new BufferedReader(
+								new FileReader("/sys/class/gpio/" + gpioNameOut + "/value"));
+						char b[] = new char[10];
 						le.read(b);
 						String valor = String.valueOf(b);
 						System.out.println(valor);
 						le.close();
-						if(valor.trim().equals("0")){               
-							System.out.println("OFF");          
-						}
-						else if(valor.trim().equals("1")){
+						if (valor.trim().equals("0")) {
+							System.out.println("OFF");
+						} else if (valor.trim().equals("1")) {
 							System.out.println("ON");
-						}            
-					}
-					catch(Exception e){
+						}
+					} catch (Exception e) {
 						System.out.println(e.getMessage());
 					}
 
-				}
-				catch(Exception e){
+				} catch (Exception e) {
 
 				}
 			}
@@ -172,11 +217,11 @@ public class Main {
 		}
 		try {
 			String servidorNeuverse = InetAddress.getByName("rasp4msmariano.dynv6.net").toString();
-			System.out.println("Endereco servidor:"+servidorNeuverse);
+			System.out.println("Endereco servidor:" + servidorNeuverse);
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		
+
 		/*
 		 * try {
 		 * String s = Cliente.convertPasswordToMD5("pradopi");
@@ -184,7 +229,7 @@ public class Main {
 		 * } catch (NoSuchAlgorithmException e1) {
 		 * }
 		 */
-		Configuracao cfg = new Configuracao();	
+		Configuracao cfg = new Configuracao();
 		Main mainServidor = new Main();
 		mainServidor.getServidorRest().setMain(mainServidor);
 		Log.setMain(mainServidor);
@@ -193,28 +238,27 @@ public class Main {
 		mainServidor.carregarConfiguracoes();
 		mainServidor.inicializar();
 		mainServidor.criarConectorServidor();
-		
-		if(cfg.getTipoServidor().equals(1)){
+
+		if (cfg.getTipoServidor().equals(1)) {
 			mainServidor.carregaGpioButtons();
-		}
-		else if(cfg.getTipoServidor().equals(2)){
+		} else if (cfg.getTipoServidor().equals(2)) {
 			mainServidor.carregaGpioButtonsBanana();
 		}
-		if(servidor!=null){
+		if (servidor != null) {
 			mainServidor.getServidorRestNoSSL().monitoraConectores(mainServidor.getServidorRestNoSSL());
 			mainServidor.processar();
 		}
-		if(servidorLog!=null)	
+		if (servidorLog != null)
 			mainServidor.processarLogs();
-		if(servidorWithSSL!=null){
+		if (servidorWithSSL != null) {
 			mainServidor.getServidorRest().monitoraConectores(mainServidor.getServidorRest());
 			mainServidor.processarWithSSL();
 		}
-		if(servidorGpioRemoto!=null){
+		if (servidorGpioRemoto != null) {
 			mainServidor.processarGpioRemoto();
 		}
 		for (ServidorCfg servidor : cfg.retornaServidores()) {
-			mainServidor.linkServidorRedicionamento(servidor);
+			//mainServidor.linkServidorRedicionamento(servidor);
 		}
 
 		// BigInteger n = new BigInteger("20");
@@ -234,7 +278,7 @@ public class Main {
 			List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
 			List<ButtonIot> buttons = new ArrayList<>();
 			for (Parametro btnGpio : listaBtnGpio) {
-				try{
+				try {
 					ButtonGpioRaspPi bgrpi = new ButtonGpioRaspPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
 							btnGpio.getC4());
 					listaGpioButtons.add(bgrpi);
@@ -251,9 +295,8 @@ public class Main {
 					bgrpi.toDo(bIot);
 					buttons.add(bIot);
 					conector.getButtons().add(bIot);
-				}
-				catch(Exception e){
-					Log.log(this, "Inicializa Gpio Servidor :"+e.getMessage(), "DEBUG");
+				} catch (Exception e) {
+					Log.log(this, "Inicializa Gpio Servidor :" + e.getMessage(), "DEBUG");
 				}
 			}
 			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
@@ -262,7 +305,7 @@ public class Main {
 			conector.setDevices(devices);
 
 		} catch (Exception e) {
-			Log.log(this, "carregaGpioButtons() :"+e.getMessage(), "DEBUG");
+			Log.log(this, "carregaGpioButtons() :" + e.getMessage(), "DEBUG");
 		}
 	}
 
@@ -272,10 +315,10 @@ public class Main {
 			List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
 			List<ButtonIot> buttons = new ArrayList<>();
 			for (Parametro btnGpio : listaBtnGpio) {
-				try{
+				try {
 					ButtonGpioBananaPi bgrpi = new ButtonGpioBananaPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
-							btnGpio.getC4(),btnGpio.getC9(),btnGpio.getC10());
-					if(btnGpio.getC1()>-1){
+							btnGpio.getC4(), btnGpio.getC9(), btnGpio.getC10());
+					if (btnGpio.getC1() > -1) {
 						listaGpioButtonsBanana.add(bgrpi);
 						bgrpi.setConectores(listaConectores);
 						bgrpi.setClientes(clientes);
@@ -291,9 +334,8 @@ public class Main {
 						buttons.add(bIot);
 						conector.getButtons().add(bIot);
 					}
-				}
-				catch(Exception e){
-					Log.log(this, "Inicializa Gpio Servidor :"+e.getMessage(), "DEBUG");
+				} catch (Exception e) {
+					Log.log(this, "Inicializa Gpio Servidor :" + e.getMessage(), "DEBUG");
 				}
 			}
 			Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
@@ -302,7 +344,7 @@ public class Main {
 			conector.setDevices(devices);
 
 		} catch (Exception e) {
-			Log.log(this, "carregaGpioButtons() :"+e.getMessage(), "DEBUG");
+			Log.log(this, "carregaGpioButtons() :" + e.getMessage(), "DEBUG");
 		}
 	}
 
@@ -331,10 +373,12 @@ public class Main {
 		return sslContext;
 	}
 
+	@SuppressWarnings("all")
 	public void linkServidorRedicionamento(ServidorCfg servidorCfg) {
 		new Thread() {
 			Conector networkConector = new Conector();
 			Cliente cliente = new Cliente();
+			boolean conectado = false;
 
 			@Override
 			public synchronized void start() {
@@ -345,7 +389,8 @@ public class Main {
 				new Thread() {
 					@Override
 					public void run() {
-						while (cliente.getSocketCliente().isConnected()) {
+						this.setName("LinkServidorAlive");
+						while (conectado) {
 							try {
 								cliente.setIsAlive(false);
 								Conector conectorAlive = new Conector();
@@ -362,12 +407,12 @@ public class Main {
 								synchronized (cliente.getEventObj()) {
 									cliente.getEventObj().wait(50000);
 									if (cliente.getIsAlive()) {
-										Log.log(this, "Retorno alive!", "DEBUG");										
+										Log.log(this, "Retorno alive!", "DEBUG");
 									} else {
 										Log.log(this, "Alive timeout", "DEBUG");
 										cliente.getSocketCliente().close();
 										break;
-									}										
+									}
 								}
 							} catch (Exception e) {
 							}
@@ -378,16 +423,26 @@ public class Main {
 
 			@Override
 			public void run() {
+				this.setName("LinkServidor");
+				SSLContext sslContext = null;
+				SSLSocket socket = null;
+				SSLSocketFactory factory = null;
+				try{
+					sslContext = buildSslContext(
+								new FileInputStream("/home/pi/Desktop/servidoriotsslpradovelho.pem"));
+					factory = sslContext.getSocketFactory();
+						
+				}
+				catch(Exception e){
+					Log.log(this, "Erro ao criar factory com 192.168.18.254: "+e.getMessage(), "DEBUG");
+				}
 				while (true) {
 					try {
-						SSLContext sslContext = buildSslContext(new
-						FileInputStream("/home/pi/Desktop/servidoriotsslpradovelho.pem"));
-						SSLSocketFactory factory =sslContext.getSocketFactory();
-						SSLSocket socket = (SSLSocket)factory.createSocket("192.168.10.254", 27015);
 
-						//SSLSocketFactory factory=(SSLSocketFactory) SSLSocketFactory.getDefault();
-						//SSLSocket socket=(SSLSocket) factory.createSocket("192.168.10.254", 27015);
-
+						Thread.sleep(20*60*1000);
+						Log.log(this,"Tentando Conexao Servidor","DEBUG'");
+						socket = (SSLSocket) factory.createSocket("192.168.18.254", 27015);
+						conectado = false;					
 						socket.startHandshake();
 
 						clientes.remove(cliente);
@@ -408,7 +463,7 @@ public class Main {
 						cliente.setListaGpioButtonsBanana(listaGpioButtonsBanana);
 						cliente.setConectorCliente(networkConector);
 						cliente.setClientes(clientes);
-						//Socket socket = new Socket("192.168.10.254", 27016);
+						// Socket socket = new Socket("192.168.18.254", 27016);
 						socket.setSoTimeout(60000);
 						socket.setKeepAlive(true);
 						cliente.setSocketCliente(socket);
@@ -420,11 +475,12 @@ public class Main {
 						PrintWriter out = new PrintWriter(
 								new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
 						out.println(textJson);
-						alive();
 						cliente.run();
 						Thread.sleep(10000);
+						conectado = true;
+						alive();
 					} catch (Exception e) {
-						Log.log(this, e.getMessage(), "DEBUG");
+						Log.log(this, "Erro de conexão com 192.168.18.254: "+e.getMessage(), "DEBUG");
 					}
 				}
 			}
@@ -432,13 +488,13 @@ public class Main {
 	}
 
 	public void criarConectorServidor() throws SQLException {
-		Configuracao cfg = new Configuracao();	
+		Configuracao cfg = new Configuracao();
 		conector = new Conector();
 		String nomeServ = cfg.getNomeServidor();
-		if(nomeServ.equals(""))
+		if (nomeServ.equals(""))
 			conector.setNome(nomeServidorDefault);
 		else
-			conector.setNome(nomeServ);	
+			conector.setNome(nomeServ);
 		UUID uniqueKey = UUID.randomUUID();
 		String id = uniqueKey.toString();
 		conector.setIdConector(id);
@@ -450,10 +506,9 @@ public class Main {
 
 		}
 		Iot iot = new Iot();
-		if(cfg.getTipoServidor().equals(1)){
+		if (cfg.getTipoServidor().equals(1)) {
 			iot.setTipoIOT(TipoIOT.RASPBERRYGPIO);
-		}
-		else if(cfg.getTipoServidor().equals(2)){
+		} else if (cfg.getTipoServidor().equals(2)) {
 			iot.setTipoIOT(TipoIOT.BANANAGPIO);
 		}
 		iot.setName(nomeDeviceDefault);
@@ -471,19 +526,58 @@ public class Main {
 		infoServidor.setDataAtual(new Date());
 		servidorRest.setInfoServidor(infoServidor);
 		servidorRestNoSSL.setInfoServidor(infoServidor);
-		listaConectores = new ArrayList<>();
+		//listaConectores = new ArrayList<>();
 		servidorRest.setListaConectores(listaConectores);
 		servidorRestNoSSL.setListaConectores(listaConectores);
 
-		
 		try {
 			servidorWithSSL = getServerSocket(serverPortDefault);
 			servidor = getServerSocket(serverPortDefault + 1);
-			servidorLog = getServerSocket(serverPortDefault + 2);			
-			servidorGpioRemoto =  getServerSocket(serverPortDefault + 3);
+			servidorLog = getServerSocket(serverPortDefault + 2);
+			servidorGpioRemoto = getServerSocket(serverPortDefault + 3);
+
+			new Thread() {
+				@Override
+				public void run() {
+					try {
+						for(int i = 0 ; i < linhasDisplay.length; i++ ){
+							linhasDisplay[i]="";
+						}
+						Versao v = new Versao();
+						display = new OLEDDisplay(0, 60);
+						SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+						boolean pisca = false;
+						while (true) {
+							Thread.sleep(1000);
+							display.clear();
+							display.drawString("Neuverse Tecnologia. " + v.getVersao() , Font.FONT_5X8, 0, 0, true);
+							display.drawString("ServidorIOT " + v.getVersao() , Font.FONT_5X8, 0, 10, true);
+							display.drawString(sdf.format(new Date()), Font.FONT_5X8, 0, 20, true);
+							display.drawString(linhasDisplay[0], Font.FONT_5X8, 0, 30, true);
+
+							display.drawString(linhasDisplay[1], Font.FONT_5X8, 0, 40, true);
+
+							
+
+							display.drawString(linhasDisplay[2], Font.FONT_5X8, 0, 50, true);
+						
+
+							//display.drawString("Ip:"+ipDaMaquina, Font.FONT_5X8, 0, 60, true);
+							//display.drawImage(null, 0, 20);
+							display.update();
+							
+						}
+					} catch (Exception e) {
+						System.out.println(e.getMessage());
+					}
+				}
+			}.start();
+
+			
+			
 		} catch (Exception e) {
 			Log.log(this, e.getMessage(), "DEBUG");
-		}		
+		}
 	}
 
 	@SuppressWarnings("unused")
@@ -492,10 +586,10 @@ public class Main {
 		Configuracao cfg = new Configuracao();
 		Integer portaServer = cfg.retornaPortaServidor();
 		portaRest = cfg.retornaPortaRest();
-		if(cfg.getControlePiscina())
-		{
+		if (cfg.getControlePiscina()) {
 			Log.log(this, "Iniciando Controle Piscina", "DEBUG");
 			controlePiscina = new ControlePiscina();
+			controlePiscina.setMain(this);
 			controlePiscina.inicializar();
 		}
 		portaSSLRest = cfg.retornaPortaSSLRest();
@@ -562,64 +656,57 @@ public class Main {
 							@Override
 							public void run() {
 								Log.log(this,
-										"Entrando GpioCliente SSL Thread ip:" + gpioCliente.getInetAddress().getHostAddress()
+										"Entrando GpioCliente SSL Thread ip:"
+												+ gpioCliente.getInetAddress().getHostAddress()
 												+ " porta " + gpioCliente.getPort(),
 										"INFO");
 
-										GpioRemoto  remoto = new GpioRemoto();
-										Comando com = null;
+								GpioRemoto remoto = new GpioRemoto();
+								Comando com = null;
 
-										try {
-											BufferedReader entrada = new BufferedReader(
-												new InputStreamReader(gpioCliente.getInputStream(), StandardCharsets.UTF_8.name()));
-											String mens = entrada.readLine();
-											if (mens == null)
-													return;
-											Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-											com = gson.fromJson(mens, Comando.class);
-											remoto.setNick(com.getNick());
-											
-										} catch (UnsupportedEncodingException e) {
-											// TODO Auto-generated catch block
-											e.printStackTrace();
-										} catch (IOException e) {
-											// TODO Auto-generated catch block
-											e.printStackTrace();
-										}
-										
-										remoto.setSocket(gpioCliente);
-
-										Integer biotId = 1;
-										ButtonIot uBiot = null;
-										for(ButtonIot b : conector.getButtons()){
-											uBiot = b;
-										}
-										if(uBiot!=null)
-											biotId = uBiot.getButtonID()+1;
-										devices.add(remoto);
-										remoto.setConectores(listaConectores);
-										remoto.setClientes(clientes);
-										remoto.setId(biotId);
-										remoto.setDevices(devices);
-										conector.getDevices().add(remoto);
-										ButtonIot bIot = new ButtonIot();
-										bIot.setButtonID(biotId);
-										bIot.setFuncao(remoto.getFuncao());
-										bIot.setTecla(remoto.getTecla());
-										bIot.setStatus(com.getDevice());
-										bIot.setNomeGpio("CtrlRemotoGpio");
-										bIot.setNick(com.getNick());
-										remoto.toDo(bIot);
-										listaGpioRemotos.add(remoto);
-										conector.getButtons().add(bIot);
-										remoto.setButtonsIots(conector.getButtons());
-										Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
-									    String jSon = gson.toJson(conector.getButtons());
-										conector.getIot().setjSon(jSon);
-										//f(conector.getDevices()!=null)
-										//	conector.setDevices(devices);
-										remoto.setCon(conector);
-										remoto.run();
+								try {
+									BufferedReader entrada = new BufferedReader(
+											new InputStreamReader(gpioCliente.getInputStream(),
+													StandardCharsets.UTF_8.name()));
+									String mens = entrada.readLine();
+									if (mens == null)
+										return;
+									Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+									com = gson.fromJson(mens, Comando.class);
+									remoto.setNick(com.getNick());
+								} catch (IOException e) {	
+									return;								
+								}
+								remoto.setSocket(gpioCliente);
+								Integer biotId = 1;
+								ButtonIot uBiot = null;
+								for (ButtonIot b : conector.getButtons()) {
+									uBiot = b;
+								}
+								if (uBiot != null)
+									biotId = uBiot.getButtonID() + 1;
+								devices.add(remoto);
+								remoto.setConectores(listaConectores);
+								remoto.setClientes(clientes);
+								remoto.setId(biotId);
+								remoto.setDevices(devices);
+								conector.getDevices().add(remoto);
+								ButtonIot bIot = new ButtonIot();
+								bIot.setButtonID(biotId);
+								bIot.setFuncao(remoto.getFuncao());
+								bIot.setTecla(remoto.getTecla());
+								bIot.setStatus(com.getDevice());
+								bIot.setNomeGpio("CtrlRemotoGpio");
+								bIot.setNick(com.getNick());
+								remoto.toDo(bIot);
+								listaGpioRemotos.add(remoto);
+								conector.getButtons().add(bIot);
+								remoto.setButtonsIots(conector.getButtons());
+								Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+								String jSon = gson.toJson(conector.getButtons());
+								conector.getIot().setjSon(jSon);
+								remoto.setCon(conector);
+								remoto.run();
 							}
 						}.start();
 
@@ -736,7 +823,7 @@ public class Main {
 										saida.write("IP Host:" + InetAddress.getLocalHost().getHostAddress() + "\r\n");
 										saida.write("Porta Servidor IOT:"
 												+ String.valueOf(Log.getMain().getServerPortDefault()) + "\r\n");
-										saida.write("MAC:"+terminal.pegarMac()+ "\r\n");
+										saida.write("MAC:" + terminal.pegarMac() + "\r\n");
 										String processName = java.lang.management.ManagementFactory.getRuntimeMXBean()
 												.getName();
 										Long pid = Long.parseLong(processName.split("@")[0]);
@@ -788,8 +875,6 @@ public class Main {
 		this.servidorRest = servidorRest;
 	}
 
-	
-
 	public List<Terminal> getTerminais() {
 		return terminais;
 	}
@@ -797,12 +882,19 @@ public class Main {
 	public void setTerminais(List<Terminal> terminais) {
 		this.terminais = terminais;
 	}
-	
-	public ControlePiscina getControlePiscina(){
-		
+
+	public ControlePiscina getControlePiscina() {
+
 		return controlePiscina;
 	}
 
-	
+
+	public OLEDDisplay getDisplay() {
+		return display;
+	}
+
+	public void setDisplay(OLEDDisplay display) {
+		this.display = display;
+	}
 
 }

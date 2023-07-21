@@ -9,17 +9,17 @@ if [ "$PID" ]; then
 	sudo kill -9 "$PID"
 fi
 
-echo "Aguardando reiniciar"
+echo "Reiniciando"
 
+sudo java -jar /home/pi/Desktop/ServidorIOT.jar &
 
+#while true; do
 
-while true; do
+#if [ "$(ps -e -o pid,cmd  | grep 'java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 /home/pi/Desktop/ServidorIOT.jar'  | awk '{print $1 " " $2}' | grep java | awk '{print $1}')" ]; then
+#	break
+#fi
 
-if [ "$(ps -e -o pid,cmd  | grep 'java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 /home/pi/Desktop/ServidorIOT.jar'  | awk '{print $1 " " $2}' | grep java | awk '{print $1}')" ]; then
-	break
-fi
-
-done
+#done
 
 
 

@@ -17,6 +17,7 @@ import br.com.neuverse.enumerador.ComEnum;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.principal.Log;
 
+
 public class GpioRemoto extends Device implements Runnable {
 
     private Socket socket;
@@ -38,6 +39,16 @@ public class GpioRemoto extends Device implements Runnable {
     private List<ButtonIot> buttonsIots;
     private List<Device> devices;
     private boolean conectado = true;
+    private Object obj = new Object();
+    private boolean aliveConectado = false;
+
+    public Object getObj() {
+        return obj;
+    }
+
+    public void setObj(Object obj) {
+        this.obj = obj;
+    }
 
     public List<Device> getDevices() {
         return devices;
@@ -167,8 +178,45 @@ public class GpioRemoto extends Device implements Runnable {
         toDoObject = obj;
     }
 
+    public void alive() {
+
+        new Thread() {
+            @Override
+            public void run() {
+                this.setName("AliveGpioRemoto"+nick);
+                while (true) {
+                    Comando com = new Comando();
+                    com.setAlive(true);
+                    try {
+                        PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())));
+                        Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
+                        String jSon = gson.toJson(com);
+                        out.println(jSon);
+                        out.flush();
+                        aliveConectado = false;
+                        synchronized (obj) {
+                            obj.wait(60*1000);
+                            if(!aliveConectado)
+                                socket.close();
+                            else{
+                                Log.log(this,"GpioRemoto Conectado recv","DEBUG");
+                            }
+                            Thread.sleep(30*1000);
+                        }                                
+                    } catch (Exception e) {
+
+                    }
+                }
+            }
+
+        }.start();
+
+    }
+
     @Override
     public void run() {
+
+        alive();
        
         while (conectado) {
             try {
@@ -181,11 +229,25 @@ public class GpioRemoto extends Device implements Runnable {
                     Log.log(this,"mens gpio remoto:"+mens,"DEBUG");
                     if (mens == null) {
                         conectado = false;
-                        socket.close();
+                        try{
+                            socket.close();
+                        }
+                        catch(Exception e){
+                        }
                         break;
                     }
+
                     Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
                     Comando com = gson.fromJson(mens, Comando.class);
+                    
+                    if (com.isConectado()) {
+                        aliveConectado = true;
+                        synchronized (obj) {
+                            obj.notifyAll();
+                        }
+                        continue;
+                    }
+
                     ButtonIot bIot = (ButtonIot) toDoObject;
                     bIot.setStatus(com.getDevice());                    
                     try {

@@ -96,10 +96,13 @@ public class ScktCom {
             public void run() {
                 while (true) {
                     try {
+                        Thread.sleep(5000);
                         clienteServidorIot(false);
+                        
                     } catch (Exception e) {
-                        Log.log(this, "clienteServidorIot" + sensor.getNome() + e.getMessage(), "DEBUG");
+                        Log.log(this, "clienteServidorIot " + sensor.getNome() + e.getMessage(), "DEBUG");
                     }
+                   
                 }
             }
         }.start();
@@ -109,7 +112,7 @@ public class ScktCom {
     public void clienteServidorIot(boolean timeout)
             throws JsonSyntaxException, IOException, NoSuchAlgorithmException, KeyManagementException {
 
-        Log.log(this, "Cliente conectando", "DEBUG");
+        Log.log(this, "Cliente conectando "+ sensor.getNome(), "DEBUG");
 
         TrustManager[] trustAllCerts = { new X509TrustManager() {
             public X509Certificate[] getAcceptedIssuers() {
@@ -131,7 +134,7 @@ public class ScktCom {
         //if (timeout)
         //    socket.setSoTimeout(5000);
         socket.startHandshake();
-        Log.log(this, "Cliente conectado", "DEBUG");
+        Log.log(this, "Cliente conectado "+ sensor.getNome(), "DEBUG");
         PrintWriter out = new PrintWriter(
                 new BufferedWriter(
                         new OutputStreamWriter(
@@ -158,8 +161,10 @@ public class ScktCom {
         String jSon = gson.toJson(com);
         out.println(jSon);
         out.flush();
-        if (out.checkError())
-            System.out.println("SSLSocketClient:  java.io.PrintWriter error");
+        if (out.checkError()){
+            Log.log(this,"SSLSocketClient:  java.io.PrintWriter error","DEBUG");
+            return;
+        }
 
         BufferedReader in = new BufferedReader(
                 new InputStreamReader(
@@ -171,6 +176,19 @@ public class ScktCom {
         while ((inputLine = in.readLine()) != null) {
             Log.log(this, "Mens: " + inputLine, "DEBUG");
             com = gson.fromJson(inputLine, Comando.class);
+
+            if (com.isAlive()) {
+                try {
+                    com.setConectado(true);
+                    String jSonConectado = gson.toJson(com);
+                    out.println(jSonConectado);
+                    out.flush();  
+                    Log.log(this,"GpioRemoto Alive recv","DEBUG");                  
+                } catch (Exception e) {
+                }
+                continue;
+            }
+
             if (com.getComando().equals(ComEnum.LIGAR)) {
                 if (!inverter)
                     sensor.ligar(1);

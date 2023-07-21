@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
@@ -22,6 +23,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -41,6 +43,7 @@ import javax.ws.rs.HttpMethod;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -50,10 +53,16 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.TextArea;
 
+import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Comando;
+import br.com.neuverse.entity.ComandoIOT;
 import br.com.neuverse.entity.Conector;
+import br.com.neuverse.entity.ControleRest;
+import br.com.neuverse.entity.Iot;
+import br.com.neuverse.entity.RestControle;
 import br.com.neuverse.enumerador.ComEnum;
 import br.com.neuverse.enumerador.Status;
+import java.util.ArrayList;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -128,6 +137,8 @@ public class TelaControlePiscina {
     boolean pushLogic = false;
     boolean pushLogicDreno = false;
 
+    private List<JButton> buttons = new ArrayList<>();
+
     @SuppressWarnings("deprecation")
     public static void main(String[] args) throws IOException {
 
@@ -142,10 +153,16 @@ public class TelaControlePiscina {
             return;
 
         }
-        Runtime.getRuntime().exec("java -jar "
-                + (new File(TelaControlePiscina.class.getProtectionDomain().getCodeSource().getLocation().getPath()))
-                        .getAbsolutePath()
-                + " cmd");
+        /*
+         * Runtime.getRuntime().exec("java -jar "
+         * + (new File(TelaControlePiscina.class.getProtectionDomain().getCodeSource().
+         * getLocation().getPath()))
+         * .getAbsolutePath()
+         * + " cmd");
+         */
+
+        new TelaControlePiscina().iniciarTela();
+        return;
 
     }
 
@@ -169,7 +186,7 @@ public class TelaControlePiscina {
         btlimite.setVisible(false);
 
         txt = new TextArea(new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Iniciando", 2, 30);
-        f.setSize(360, 200);
+        f.setSize(360, 400);
         f.setLayout(new BorderLayout());
         Dimension ds = Toolkit.getDefaultToolkit().getScreenSize();
         Dimension dw = f.getSize();
@@ -235,18 +252,152 @@ public class TelaControlePiscina {
         f.add(btAgua);
         f.add(btlimite);
         f.add(crono);
+
+        Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss")
+                .create();
+        try {
+            String jSon = sendRest("https://192.168.0.254:8080/ServidorIOT/listarIOTs", "");
+            Type listType = new TypeToken<ArrayList<Conector>>() {
+            }.getType();
+            List<Conector> conectores = gson.fromJson(jSon, listType);
+            for (Conector conector : conectores) {
+                f.setTitle(f.getTitle() + " "+conector.getIdConector());
+
+                
+                Integer pos = 60;
+                for (ButtonIot bIot : conector.getButtons()) {
+                    JButton button = new JButton(bIot.getNick());
+                    button.setName(bIot.getButtonID().toString());
+                    buttons.add(button);
+                    button.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            trataButton(e.getActionCommand());
+                        }
+                    });
+                    button.setBounds(0, pos, 100, 20);
+                    button.setContentAreaFilled(false);
+                    button.setOpaque(true);
+                    if (bIot.getStatus().equals(Status.ON)) {
+                        button.setBackground(Color.RED);
+                    } else
+                        button.setBackground(Color.GREEN);
+                    f.add(button);
+                    pos = pos + 30;
+                    System.out.println(bIot.getNick());
+                }
+            }
+            new Thread() {
+                @Override
+                public void run() {
+                    Type listType  = new TypeToken<ArrayList<Conector>>() {}.getType();
+                    Type listType1 = new TypeToken<ArrayList<ButtonIot>>() {}.getType();
+                    while (true) {
+
+                        try {
+                            Thread.sleep(5000);
+                            String jSon = sendRest("https://192.168.0.254:8080/ServidorIOT/listarIOTs", "");
+                            
+                            List<Conector> conectores = gson.fromJson(jSon, listType);
+                            for (Conector conector : conectores) {
+                              
+                                for (ButtonIot bIot : conector.getButtons()) {
+                                    for (JButton button : buttons) {
+                                        if (button.getName().equals(bIot.getButtonID().toString())) {
+                                            if (bIot.getStatus().equals(Status.ON)) {
+                                                button.setBackground(Color.RED);
+                                            } else
+                                                button.setBackground(Color.GREEN);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if(conectores.size() == 0){
+                                for(JButton b : buttons){
+                                     b.setBackground(Color.GRAY);
+                                }
+                            }
+                        } catch (Exception e) {
+                             if(conectores.size() == 0){
+                                for(JButton b : buttons){
+                                     b.setBackground(Color.GRAY);
+                                }
+                            }
+
+                        }
+                    }
+
+                }
+
+            }.start();
+
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         // f.add(statusConfig);
         // f.add(txt);
         f.setVisible(true);
 
+        monitoraIOTS();
         monitoraChave();
+
+    }
+
+    public void trataButton(String acao) {
+        System.out.println(acao);
+    }
+
+    public String sendRest(String uri, String jSon) throws Exception {
+
+        URL url = new URL(uri);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod(HttpMethod.POST);
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setRequestProperty("Host", uri);
+        con.setRequestProperty("Connection", "Keep-Alive");
+        if (jSon != null && jSon.length() > 0)
+            con.setRequestProperty("Content-Length", String.valueOf(jSon.length()));
+        con.setRequestProperty("Accept", "*/*");
+        con.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+        con.setDoOutput(true);
+
+        try (OutputStream os = con.getOutputStream()) {
+            if (jSon != null && jSon.length() > 0) {
+                byte[] input = jSon.getBytes();
+                os.write(input, 0, jSon.length());
+            }
+        }
+        int responseCode = con.getResponseCode();
+
+        System.out.println("Response code:" + responseCode);
+
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                System.out.println(inputLine);
+                response.append(inputLine);
+            }
+            in.close();
+
+            return response.toString();
+
+        }
+        return null;
+    }
+
+    public void monitoraIOTS() {
 
     }
 
     public void iniciarConexao() throws Exception {
         SSLContext sslContext = buildSslContext(new FileInputStream("/home/pi/Desktop/servidoriotsslpradovelho.pem"));
         SSLSocketFactory factory = sslContext.getSocketFactory();
-        SSLSocket socket = (SSLSocket) factory.createSocket("192.168.10.254", 27015);
+        SSLSocket socket = (SSLSocket) factory.createSocket("192.168.18.254", 27015);
         socket.startHandshake();
     }
 
@@ -531,7 +682,6 @@ public class TelaControlePiscina {
 
                         if (c != null) {
 
-
                             if (c.getStFiltro().equals(Status.ON)) {
                                 btBomba.setContentAreaFilled(false);
                                 btBomba.setOpaque(true);
@@ -556,12 +706,11 @@ public class TelaControlePiscina {
 
                             }
 
-                            if(c.getStDreno().equals(Status.OFF)){
+                            if (c.getStDreno().equals(Status.OFF)) {
                                 btBombaDreno.setContentAreaFilled(false);
                                 btBombaDreno.setOpaque(true);
                                 btBombaDreno.setBackground(Color.GREEN);
-                            }
-                            else if(c.getStDreno().equals(Status.ON)){
+                            } else if (c.getStDreno().equals(Status.ON)) {
                                 btBombaDreno.setContentAreaFilled(false);
                                 btBombaDreno.setOpaque(true);
                                 btBombaDreno.setBackground(Color.RED);

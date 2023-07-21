@@ -188,7 +188,7 @@ public class Banana {
     public void iniciarConexao() throws Exception {
         SSLContext sslContext = buildSslContext(new FileInputStream("/home/pi/Desktop/servidoriotsslpradovelho.pem"));
         SSLSocketFactory factory = sslContext.getSocketFactory();
-        SSLSocket socket = (SSLSocket) factory.createSocket("192.168.10.254", 27015);
+        SSLSocket socket = (SSLSocket) factory.createSocket("192.168.18.254", 27015);
         socket.startHandshake();
     }
 

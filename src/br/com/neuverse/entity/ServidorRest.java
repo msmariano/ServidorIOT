@@ -191,7 +191,7 @@ public class ServidorRest implements HttpHandler {
     }
 
     public void monitoraConectores(ServidorRest sr) {
-        new Thread() {
+        /*new Thread() {
             @Override
             public void run() {
                 Log.log(sr, "Iniciando monitoraConectores()", "INFO");
@@ -221,7 +221,7 @@ public class ServidorRest implements HttpHandler {
 
                 }
             }
-        }.start();
+        }.start();*/
     }
 
     public InfoServidor getInfoServidor() {
@@ -279,7 +279,7 @@ public class ServidorRest implements HttpHandler {
                 } catch (Exception e) {
                     send(500, e.getMessage(), exchange);
                 }
-            } else if (uri.getPath().equals("/ServidorIOT/plugon")) {
+            } /*else if (uri.getPath().equals("/ServidorIOT/plugon")) {
                 boolean bConfigure = true;
                 boolean bErro = false;
                 Conector conRetirar = null;
@@ -297,14 +297,7 @@ public class ServidorRest implements HttpHandler {
                         bConfigure = false;
                         break;
                     }
-                    /*
-                     * else if(con.getNome().equals(plug.getNome())) {
-                     * bErro = true;
-                     * bConfigure = false;
-                     * conRetirar = con;
-                     * break;
-                     * }
-                     */
+              
 
                 }
                 if (bConfigure) {
@@ -359,7 +352,7 @@ public class ServidorRest implements HttpHandler {
                     exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                     send(200, gson.toJson(plug), exchange);
                 }
-            } else if (uri.getPath().equals("/ServidorIOT/loginServidorIOT")) {
+            }*/ else if (uri.getPath().equals("/ServidorIOT/loginServidorIOT")) {
                 Log.log(this, "Logando...", "DEBUG");
 
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss").create();
@@ -491,26 +484,10 @@ public class ServidorRest implements HttpHandler {
 
             } else if (uri.getPath().equals("/ServidorIOT/listarIOTs")) {
                 Log.log(this, "listarIOTs", "INFO");
-                // List<String> iots = new ArrayList<>();
                 Gson gson = new GsonBuilder().setDateFormat("dd/MM/yyyy HH:mm:ss")
                         .excludeFieldsWithoutExposeAnnotation().create();
                 try {
-                    /*
-                     * for(Conector con :listaConectores){
-                     * 
-                     * for(ButtonIot bIot : con.getButtons()){
-                     * for(Device device: con.getDevices()){
-                     * if(device.getId().equals(bIot.getButtonID())){
-                     * bIot.setStatus(device.getStatus());
-                     * }
-                     * }
-                     * }
-                     * String jSon = gson.toJson(con.getButtons());
-                     * con.getIot().setjSon(jSon);
-                     * iots.add(con.getIot().getjSon());
-                     * }
-                     */
-
+                    System.out.println(main.getConector());
                     exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                     send(200, gson.toJson(listaConectores), exchange);
                 } catch (Exception e) {

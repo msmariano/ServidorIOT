@@ -1,0 +1,20 @@
+curl --location -k 'https://192.168.0.254:8080/ServidorIOT/comando' \
+--header 'Content-Type: application/json' \
+--data '{
+        "idConector": "e5734cfa-f352-4c70-89c9-5d08fb186d84",
+        "usuario": "msmariano",
+        "senha": "mar0403",
+        "nome": "ServidorNeuverseIOT",
+        "iot": {
+            "name": "ServidorNeuverseIOT",
+            "jSon": "[
+                {\"tecla\":\"HIGH\",\"buttonID\":1,\"nomeGpio\":\"CtrlGpioServidor\",\"status\":\"ON\",\"selecionado\":true,\"funcao\":\"KEY\",\"nick\":\"Cozinha\"},
+                {\"tecla\":\"HIGH\",\"buttonID\":2,\"nomeGpio\":\"CtrlGpioServidor\",\"status\":\"ON\",\"selecionado\":true,\"funcao\":\"KEY\",\"nick\":\"Garagem\"},
+                {\"tecla\":\"HIGH\",\"buttonID\":3,\"nomeGpio\":\"CtrlGpioServidor\",\"status\":\"OFF\",\"selecionado\":true,\"funcao\":\"KEY\",\"nick\":\"Sotão\"},
+                {\"tecla\":\"HIGH\",\"buttonID\":4,\"nomeGpio\":\"CtrlGpioServidor\",\"status\":\"OFF\",\"selecionado\":true,\"funcao\":\"KEY\",\"nick\":\"Piscina\"}]",
+            "tipoIOT": "IOT"
+        }
+    }'
+
+    curl --location -k  --request POST 'https://192.168.0.254:8080/ServidorIOT/listarIOTs' \
+    --data ''

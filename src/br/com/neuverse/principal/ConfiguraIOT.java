@@ -127,11 +127,11 @@ public class ConfiguraIOT extends JFrame implements ActionListener {
         /*
          * conf.configIOT.getSsidSessao().setPassword("80818283");
          * conf.configIOT.getSsidSessao().setSsid("Escritorio");
-         * conf.configIOT.getServidorSessao().setEndereco("192.168.10.254");
+         * conf.configIOT.getServidorSessao().setEndereco("192.168.18.254");
          * conf.configIOT.getServidorSessao().setPorta(27016);
          * conf.configIOT.getConectorSessao().setSenha("mar0403");
          * conf.configIOT.getConectorSessao().setUsuario("msmariano");
-         * conf.configIOT.getServidorRestSessao().setIp("192.168.10.254");
+         * conf.configIOT.getServidorRestSessao().setIp("192.168.18.254");
          * conf.configIOT.getConectorSessao().setNome("DeviceNeuverse");
          * conf.configIOT.getServidorRestSessao().setPorta(8080);
          * SimpleDateFormat sd = new SimpleDateFormat("ddMMyyyy");

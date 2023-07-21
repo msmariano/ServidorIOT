@@ -13,6 +13,24 @@ public class Comando {
     private Status timer;
     private Status device;
     private String nick;
+    private boolean alive = false;
+    private boolean conectado = false;
+
+    public boolean isAlive() {
+        return alive;
+    }
+
+    public void setAlive(boolean alive) {
+        this.alive = alive;
+    }   
+
+    public boolean isConectado() {
+        return conectado;
+    }
+
+    public void setConectado(boolean conectado) {
+        this.conectado = conectado;
+    }
 
     public String getNick(){
         return nick;
