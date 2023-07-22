@@ -267,12 +267,13 @@ public class TelaControlePiscina {
                 Integer pos = 60;
                 for (ButtonIot bIot : conector.getButtons()) {
                     JButton button = new JButton(bIot.getNick());
-                    button.setName(bIot.getButtonID().toString());
+                    button.setName(bIot.getButtonID().toString()+";"+conector.getIdConector());
                     buttons.add(button);
                     button.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            trataButton(e.getActionCommand());
+                            JButton b = (JButton)e.getSource();
+                            trataButton(b.getName());
                         }
                     });
                     button.setBounds(0, pos, 100, 20);
@@ -299,19 +300,27 @@ public class TelaControlePiscina {
                             String jSon = sendRest("https://192.168.0.254:8080/ServidorIOT/listarIOTs", "");
                             
                             List<Conector> conectores = gson.fromJson(jSon, listType);
+                            boolean parar = false;
                             for (Conector conector : conectores) {
-                              
+                                
                                 for (ButtonIot bIot : conector.getButtons()) {
                                     for (JButton button : buttons) {
-                                        if (button.getName().equals(bIot.getButtonID().toString())) {
-                                            if (bIot.getStatus().equals(Status.ON)) {
-                                                button.setBackground(Color.RED);
-                                            } else
-                                                button.setBackground(Color.GREEN);
-                                            break;
+                                        String info[] = button.getName().split(";");
+                                        if(info[1].equals(conector.getIdConector())){
+                                            if (info[0].equals(bIot.getButtonID().toString())) {
+                                                if (bIot.getStatus().equals(Status.ON)) {
+                                                    button.setBackground(Color.RED);
+                                                } else
+                                                    button.setBackground(Color.GREEN);
+                                                //parar = true;
+                                                //break;
+                                            }
                                         }
                                     }
+                                    
                                 }
+                                //if(parar)
+                                    //break;
                             }
                             if(conectores.size() == 0){
                                 for(JButton b : buttons){
@@ -345,8 +354,33 @@ public class TelaControlePiscina {
 
     }
 
-    public void trataButton(String acao) {
-        System.out.println(acao);
+    public void trataButton(String id) {
+        try {
+            Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss")
+                    .create();
+            String jSon = sendRest("https://192.168.0.254:8080/ServidorIOT/listarIOTs", "");
+            Type listType = new TypeToken<ArrayList<Conector>>() {
+            }.getType();
+            List<Conector> conectores = gson.fromJson(jSon, listType);
+            System.out.println(id);
+            for (Conector conector : conectores) {
+                for (ButtonIot bIot : conector.getButtons()) {
+                    if(bIot.getButtonID().toString().equals(id)){
+                        System.out.println(bIot.getNick());
+                        if(bIot.getStatus().equals(Status.ON))
+                            bIot.setStatus(Status.OFF);
+                        else
+                            bIot.setStatus(Status.ON);
+                        bIot.setSelecionado(true);
+                        Conector con = new Conector();
+                        
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+
+        }
     }
 
     public String sendRest(String uri, String jSon) throws Exception {
