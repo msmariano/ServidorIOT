@@ -12,13 +12,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
@@ -53,13 +50,10 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.TextArea;
 
-import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Comando;
-import br.com.neuverse.entity.ComandoIOT;
 import br.com.neuverse.entity.Conector;
-import br.com.neuverse.entity.ControleRest;
-import br.com.neuverse.entity.Iot;
-import br.com.neuverse.entity.RestControle;
+import br.com.neuverse.entity.Dispositivo;
+import br.com.neuverse.entity.Pool;
 import br.com.neuverse.enumerador.ComEnum;
 import br.com.neuverse.enumerador.Status;
 import java.util.ArrayList;
@@ -153,16 +147,25 @@ public class TelaControlePiscina {
             return;
 
         }
-        /*
-         * Runtime.getRuntime().exec("java -jar "
-         * + (new File(TelaControlePiscina.class.getProtectionDomain().getCodeSource().
-         * getLocation().getPath()))
-         * .getAbsolutePath()
-         * + " cmd");
-         */
 
-        new TelaControlePiscina().iniciarTela();
-        return;
+          new Thread() {
+                @Override
+                public void run() {
+                    try{
+                        //Runtime.getRuntime().exec("cmd route add 192.168.0.0 mask 255.255.255.0 192.168.18.254");
+                    }
+                    catch(Exception e){
+                    }
+                }
+            }.start();
+
+        Runtime.getRuntime().exec("java -jar "
+                + (new File(TelaControlePiscina.class.getProtectionDomain().getCodeSource().getLocation().getPath()))
+                        .getAbsolutePath()
+                + " cmd");
+
+        // new TelaControlePiscina().iniciarTela();
+        // return;
 
     }
 
@@ -256,22 +259,43 @@ public class TelaControlePiscina {
         Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss")
                 .create();
         try {
-            String jSon = sendRest("https://192.168.0.254:8080/ServidorIOT/listarIOTs", "");
-            Type listType = new TypeToken<ArrayList<Conector>>() {
+            String jSon = sendRest("https://192.168.0.254:27016/ServidorIOT/listar", "", false);
+            Type listType = new TypeToken<ArrayList<Pool>>() {
             }.getType();
-            List<Conector> conectores = gson.fromJson(jSon, listType);
-            for (Conector conector : conectores) {
-                f.setTitle(f.getTitle() + " "+conector.getIdConector());
+            List<Pool> conectores = gson.fromJson(jSon, listType);
+            for (Pool conector : conectores) {
+                f.setTitle(f.getTitle() + " " + conector.getId());
 
-                
                 Integer pos = 60;
-                for (ButtonIot bIot : conector.getButtons()) {
+                for (Dispositivo bIot : conector.getDispositivos()) {
                     JButton button = new JButton(bIot.getNick());
-                    button.setName(bIot.getButtonID().toString());
+                    button.setName(bIot.getId().toString() + ";" + conector.getId());
                     buttons.add(button);
                     button.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
+                            JButton jSource = (JButton) e.getSource();
+                            String id = jSource.getName();
+                            String info[] = id.split(";");
+                            try {
+                                List<Pool> poolsAtualizar = new ArrayList<>();
+                                Pool poolAtualizar = new Pool();
+                                poolsAtualizar.add(poolAtualizar);
+                                poolAtualizar.setId(info[1]);
+                                Dispositivo disp = new Dispositivo();
+                                poolAtualizar.getDispositivos().add(disp);
+                                disp.setId(Integer.valueOf(info[0]));
+                                if (jSource.getBackground().equals(Color.GREEN))
+                                    disp.setStatus(Status.ON);
+                                else
+                                    disp.setStatus(Status.OFF);
+                                String jSon = gson.toJson(poolsAtualizar);
+                                jSon = sendRest("https://192.168.0.254:27016/ServidorIOT/atualizar", jSon, true);
+                                System.out.println(jSon);
+                            } catch (Exception e1) {
+
+                            }
+
                             trataButton(e.getActionCommand());
                         }
                     });
@@ -290,20 +314,24 @@ public class TelaControlePiscina {
             new Thread() {
                 @Override
                 public void run() {
-                    Type listType  = new TypeToken<ArrayList<Conector>>() {}.getType();
-                    Type listType1 = new TypeToken<ArrayList<ButtonIot>>() {}.getType();
+                    Type listType = new TypeToken<ArrayList<Pool>>() {
+                    }.getType();
                     while (true) {
 
                         try {
                             Thread.sleep(5000);
-                            String jSon = sendRest("https://192.168.0.254:8080/ServidorIOT/listarIOTs", "");
-                            
-                            List<Conector> conectores = gson.fromJson(jSon, listType);
-                            for (Conector conector : conectores) {
-                              
-                                for (ButtonIot bIot : conector.getButtons()) {
+                            String jSon = sendRest("https://192.168.0.254:27016/ServidorIOT/listar", "", false);
+
+                            List<Pool> conectores = gson.fromJson(jSon, listType);
+                            for (Pool conector : conectores) {
+
+                                for (Dispositivo bIot : conector.getDispositivos()) {
                                     for (JButton button : buttons) {
-                                        if (button.getName().equals(bIot.getButtonID().toString())) {
+                                        String id = button.getName();
+                                        String info[] = id.split(";");
+
+                                        if (info[0].equals(bIot.getId().toString())
+                                                && conector.getId().equals(info[1])) {
                                             if (bIot.getStatus().equals(Status.ON)) {
                                                 button.setBackground(Color.RED);
                                             } else
@@ -313,15 +341,15 @@ public class TelaControlePiscina {
                                     }
                                 }
                             }
-                            if(conectores.size() == 0){
-                                for(JButton b : buttons){
-                                     b.setBackground(Color.GRAY);
+                            if (conectores.size() == 0) {
+                                for (JButton b : buttons) {
+                                    b.setBackground(Color.GRAY);
                                 }
                             }
                         } catch (Exception e) {
-                             if(conectores.size() == 0){
-                                for(JButton b : buttons){
-                                     b.setBackground(Color.GRAY);
+                            if (conectores.size() == 0) {
+                                for (JButton b : buttons) {
+                                    b.setBackground(Color.GRAY);
                                 }
                             }
 
@@ -349,8 +377,10 @@ public class TelaControlePiscina {
         System.out.println(acao);
     }
 
-    public String sendRest(String uri, String jSon) throws Exception {
+    public String sendRest(String uri, String jSon, boolean parar) throws Exception {
 
+        if (parar)
+            System.out.println();
         URL url = new URL(uri);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(HttpMethod.POST);

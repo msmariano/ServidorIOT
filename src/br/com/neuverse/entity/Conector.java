@@ -51,8 +51,15 @@ public class Conector {
 	private List<ButtonIot> buttons = new ArrayList<>();
 	@Expose(serialize = false)
 	private Cliente cliente;
-		
+	@Expose(serialize = true)
+	private List<Dispositivo> dispositivos = new ArrayList<>();	
 
+	public List<Dispositivo> getDispositivos() {
+		return dispositivos;
+	}
+	public void setDispositivos(List<Dispositivo> dispositivos) {
+		this.dispositivos = dispositivos;
+	}
 	public Cliente getCliente() {
 		return cliente;
 	}

@@ -89,8 +89,8 @@ public class ControlePiscina {
         ligarBombaFiltro(0);
         monitoraChave();
         timer(null, null);
-        new ScktCom("Filtro", false, "17", "out").inicializar();
-        new ScktCom("Dreno", true, "10", "out").inicializar();
+        //new ScktCom("Filtro", false, "17", "out").inicializar();
+        //new ScktCom("Dreno", true, "10", "out").inicializar();
 
     }
 
