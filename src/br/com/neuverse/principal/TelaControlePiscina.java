@@ -320,12 +320,12 @@ public class TelaControlePiscina {
 
                         try {
                             Thread.sleep(5000);
-                            String jSon = sendRest("https://192.168.0.254:8080/ServidorIOT/listarIOTs", "");
-                            
-                            List<Conector> conectores = gson.fromJson(jSon, listType);
-                            for (Conector conector : conectores) {
-                              
-                                for (ButtonIot bIot : conector.getButtons()) {
+                            String jSon = sendRest("https://192.168.0.254:27016/ServidorIOT/listar", "", false);
+
+                            List<Pool> conectores = gson.fromJson(jSon, listType);
+                            for (Pool conector : conectores) {
+
+                                for (Dispositivo bIot : conector.getDispositivos()) {
                                     for (JButton button : buttons) {
                                         String id = button.getName();
                                         String info[] = id.split(";");
@@ -373,33 +373,8 @@ public class TelaControlePiscina {
 
     }
 
-    public void trataButton(String id) {
-        try {
-            Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setDateFormat("dd/MM/yyyy HH:mm:ss")
-                    .create();
-            String jSon = sendRest("https://192.168.0.254:8080/ServidorIOT/listarIOTs", "");
-            Type listType = new TypeToken<ArrayList<Conector>>() {
-            }.getType();
-            List<Conector> conectores = gson.fromJson(jSon, listType);
-            System.out.println(id);
-            for (Conector conector : conectores) {
-                for (ButtonIot bIot : conector.getButtons()) {
-                    if(bIot.getButtonID().toString().equals(id)){
-                        System.out.println(bIot.getNick());
-                        if(bIot.getStatus().equals(Status.ON))
-                            bIot.setStatus(Status.OFF);
-                        else
-                            bIot.setStatus(Status.ON);
-                        bIot.setSelecionado(true);
-                        Conector con = new Conector();
-                        
-                        break;
-                    }
-                }
-            }
-        } catch (Exception e) {
-
-        }
+    public void trataButton(String acao) {
+        System.out.println(acao);
     }
 
     public String sendRest(String uri, String jSon, boolean parar) throws Exception {
