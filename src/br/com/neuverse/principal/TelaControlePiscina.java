@@ -159,12 +159,12 @@ public class TelaControlePiscina {
                 }
             }.start();
 
-        Runtime.getRuntime().exec("java -jar "
-                + (new File(TelaControlePiscina.class.getProtectionDomain().getCodeSource().getLocation().getPath()))
+            Runtime.getRuntime().exec("java -jar "
+            + (new File(TelaControlePiscina.class.getProtectionDomain().getCodeSource().getLocation().getPath()))
                         .getAbsolutePath()
-                + " cmd");
+            + " cmd");
 
-        // new TelaControlePiscina().iniciarTela();
+         //new TelaControlePiscina().iniciarTela();
         // return;
 
     }
@@ -186,10 +186,10 @@ public class TelaControlePiscina {
         btlimite.setContentAreaFilled(false);
         btlimite.setOpaque(true);
         btlimite.setBackground(Color.GRAY);
-        btlimite.setVisible(false);
+        //btlimite.setVisible(false);
 
         txt = new TextArea(new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Iniciando", 2, 30);
-        f.setSize(360, 400);
+        f.setSize(230, 400);
         f.setLayout(new BorderLayout());
         Dimension ds = Toolkit.getDefaultToolkit().getScreenSize();
         Dimension dw = f.getSize();
@@ -232,7 +232,7 @@ public class TelaControlePiscina {
         txt.setBounds(0, 70, 400, 300);
 
         btAgua.setBounds(110, 0, 100, 20);
-        btlimite.setBounds(230, 0, 100, 20);
+        btlimite.setBounds(110, 30, 100, 20);
         btAgua.setEnabled(false);
         btlimite.setEnabled(false);
         btBomba.addActionListener(new ActionListener() {
@@ -268,7 +268,9 @@ public class TelaControlePiscina {
 
                 Integer pos = 60;
                 for (Dispositivo bIot : conector.getDispositivos()) {
-                    JButton button = new JButton(bIot.getNick());
+                    byte[] isoBytes = bIot.getNick().getBytes("ISO-8859-1");
+                    String novoValor = new String(isoBytes, "UTF-8"); 
+                    JButton button = new JButton(novoValor);
                     button.setName(bIot.getId().toString() + ";" + conector.getId());
                     buttons.add(button);
                     button.addActionListener(new ActionListener() {
@@ -655,14 +657,14 @@ public class TelaControlePiscina {
                 while (true) {
                     if (lerPin(nivelAlto).equals("1")) {
                         if (!inverter) {
-                            btlimite.setVisible(false);
+                            //btlimite.setVisible(false);
                             inverter = true;
                         } else {
-                            btlimite.setVisible(true);
+                            //btlimite.setVisible(true);
                             inverter = false;
                         }
                     } else
-                        btlimite.setVisible(false);
+                        //btlimite.setVisible(false);
 
                     try {
                         Thread.sleep(1000);

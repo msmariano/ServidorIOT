@@ -12,6 +12,7 @@ package br.com.neuverse.principal;
 //keytool.exe -import -file "C:\Users\msmar\OneDrive\Documentos\ipca.bcb.gov.br.crt" -keystore "ipca.bcb.gov.br.crt" -storepass "changeit"
 //ssh-keygen(sem senha) cat ~/.ssh/id_rsa.pub | ssh pi@192.168.18.254 "mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && chmod -R go= ~/.ssh && cat >> ~/.ssh/authorized_keys"
 // scp .\ServidorIOT-1.jar pi@192.168.10.76:/home/pi
+//ssh -L 5901:127.0.0.1:5900 -C -N -l pi 192.168.0.125
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
