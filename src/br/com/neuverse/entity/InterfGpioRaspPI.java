@@ -27,15 +27,18 @@ public class InterfGpioRaspPI extends Dispositivo {
     
     public InterfGpioRaspPI(Integer gpioSaida, Integer gpioEntrada, Integer p, Integer id, String nickNameString) {
 
+        System.out.println("Iniciando "+gpioSaida+" "+gpioEntrada+" "+p+" "+id+" "+nickNameString);
         setId(id);
         setNick(nickNameString);
         gpio = GpioFactory.getInstance();
         Pin pinIN = null;
         Pin pinOUT = null;
         tipo = p;
-        pinOUT = RaspiPin.getPinByAddress(gpioSaida);
-        saida = gpio.provisionDigitalOutputPin(pinOUT);
-        if (gpioEntrada > -1) {
+        if(gpioSaida>-1){
+            pinOUT = RaspiPin.getPinByAddress(gpioSaida);
+            saida = gpio.provisionDigitalOutputPin(pinOUT);
+        }
+        if (gpioEntrada!=null&&gpioEntrada > -1) {
             pinIN = RaspiPin.getPinByAddress(gpioEntrada);
             if (p.equals(1))
                 entrada = gpio.provisionDigitalInputPin(pinIN, PinPullResistance.PULL_UP);
@@ -62,16 +65,18 @@ public class InterfGpioRaspPI extends Dispositivo {
             });
 
         }
-        saida.addListener(new GpioPinListenerDigital() {
-            @Override
-            public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
-                if (event.getState().equals(PinState.HIGH))
-                    setStatus(Status.ON);
-                else
-                   setStatus(Status.OFF);
-            }
-        });
-        setStatus(getStatus());
+        if(gpioSaida>-1){
+            saida.addListener(new GpioPinListenerDigital() {
+                @Override
+                public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
+                    if (event.getState().equals(PinState.HIGH))
+                        setStatus(Status.ON);
+                    else
+                    setStatus(Status.OFF);
+                }
+            });
+            setStatus(getStatus());
+        }
 
     }
 

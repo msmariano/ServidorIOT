@@ -30,10 +30,14 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 
 import br.com.neuverse.database.Configuracao;
+import br.com.neuverse.entity.ButtonGpioBananaPi;
+import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Dispositivo;
+import br.com.neuverse.entity.InterGpioBananaPi;
 import br.com.neuverse.entity.InterfGpioRaspPI;
 import br.com.neuverse.entity.Parametro;
 import br.com.neuverse.entity.Pool;
+import br.com.neuverse.enumerador.Status;
 
 public class ServidorIOT implements HttpHandler {
     Pool pool = new Pool();
@@ -58,11 +62,18 @@ public class ServidorIOT implements HttpHandler {
         try {
             Configuracao cfg = new Configuracao();
             List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
-            for (Parametro btnGpio : listaBtnGpio) {
-                InterfGpioRaspPI iGpioRaspPI = new InterfGpioRaspPI(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
-                        btnGpio.getC4(), btnGpio.getC8());
-                pool.getDispositivos().add(iGpioRaspPI);
+            System.out.println("Carregando configuracao Gpio...");
+            if (cfg.getTipoServidor().equals(1)) {
+                for (Parametro btnGpio : listaBtnGpio) {
+                    InterfGpioRaspPI iGpioRaspPI = new InterfGpioRaspPI(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
+                            btnGpio.getC4(), btnGpio.getC8());
+                    pool.getDispositivos().add(iGpioRaspPI);
+                }
             }
+            else if (cfg.getTipoServidor().equals(2)) {
+                carregaGpioButtonsBanana();
+            }
+            System.out.println("Carregando Servidor Rest...");
             httpServer = HttpsServer.create(new InetSocketAddress(27016), 0);
             SSLContext sslContext = SSLContext.getInstance("TLS");
             char[] password = "password".toCharArray();
@@ -97,8 +108,32 @@ public class ServidorIOT implements HttpHandler {
             httpServer.setExecutor(threadPoolExecutor);
             this.httpServer.start();
         } catch (Exception e) {
+            System.out.println("Erro ao instanciar ServidorIOT:"+e.getMessage());
         }
     }
+
+    public void carregaGpioButtonsBanana() {
+		try {
+			Configuracao cfg = new Configuracao();
+			List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
+			for (Parametro btnGpio : listaBtnGpio) {
+				try {
+					InterGpioBananaPi bgrpi = new InterGpioBananaPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
+							btnGpio.getC4(), btnGpio.getC9(), btnGpio.getC10(), btnGpio.getC8());
+					if (btnGpio.getC1() > -1) {
+						 pool.getDispositivos().add(bgrpi);
+						
+					}
+				} catch (Exception e) {
+					Log.log(this, "Inicializa carregaGpioButtonsBanana :" + e.getMessage(), "DEBUG");
+				}
+			}
+			
+
+		} catch (Exception e) {
+			Log.log(this, "carregaGpioButtons() :" + e.getMessage(), "DEBUG");
+		}
+	}
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -139,6 +174,9 @@ public class ServidorIOT implements HttpHandler {
                     send(200, "", exchange);
                    
                 } 
+                else if(uri.getPath().equals("/ServidorIOT/info")){
+                    send(200, "{\"Servico\":\"ServidorIOT\"}", exchange);
+                }
                 else {
                     send(404, "", exchange);
                 }
