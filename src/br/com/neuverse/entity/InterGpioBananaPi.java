@@ -22,13 +22,14 @@ public class InterGpioBananaPi extends Dispositivo {
     private Integer tpControle;
 
     public InterGpioBananaPi(Integer gpioInterruptor, Integer gpioComando, Integer p, Integer idVariavel,
-            String btnsCtrl, Integer tipoControle,String nickNameString) throws IOException {
+            String btnsCtrl, Integer tipoControle,String nickNameString,String idPool) throws IOException {
 
         Log.log(this,"Placa BananaPi ID:"+idVariavel+" I:"+gpioInterruptor+" O:"+gpioComando+" btns:"+btnsCtrl
             +" tipo:"+tipoControle,"INFO");
            
         setId(idVariavel);
         setNick(nickNameString);
+        setIdPool(idPool);
         gpioNameOut = "gpio" + gpioInterruptor;
         gpioNameIn = "gpio" + gpioComando;
         btnsCtrlControlar = btnsCtrl;
@@ -55,18 +56,28 @@ public class InterGpioBananaPi extends Dispositivo {
                 new Thread() {
                     @Override
                     public void run() {
+                        Status statusLocal = getStatus();
                         while (true) {
                             try {
                                 BufferedReader le = new BufferedReader(
                                         new FileReader("/sys/class/gpio/" + gpioNameOut + "/value"));
                                 char b[] = new char[10];
                                 le.read(b);
+                                 
                                 String valor = String.valueOf(b);
                                 le.close();
                                 if (valor.trim().equals("0")) {
                                     setStatus(Status.OFF);
+                                    if(statusLocal.equals(Status.ON)){
+                                        sendEvents();
+                                    }
+                                    statusLocal = getStatus();
                                 } else if (valor.trim().equals("1")) {
                                    setStatus(Status.ON);
+                                   if(statusLocal.equals(Status.OFF)){
+                                        sendEvents();
+                                    }
+                                    statusLocal = getStatus();
                                 }                                
                                 Thread.sleep(1000);
                             } catch (Exception e) {

@@ -20,6 +20,9 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -30,21 +33,23 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 
 import br.com.neuverse.database.Configuracao;
-import br.com.neuverse.entity.ButtonGpioBananaPi;
-import br.com.neuverse.entity.ButtonIot;
 import br.com.neuverse.entity.Dispositivo;
 import br.com.neuverse.entity.InterGpioBananaPi;
 import br.com.neuverse.entity.InterfGpioRaspPI;
 import br.com.neuverse.entity.Parametro;
 import br.com.neuverse.entity.Pool;
-import br.com.neuverse.enumerador.Status;
 
-public class ServidorIOT implements HttpHandler {
+public class ServidorIOT implements HttpHandler, IMqttMessageListener {
+
     Pool pool = new Pool();
     List<Pool> conectores = new ArrayList<>();
-    private HttpsServer httpServer;    
-    Type TypeListPool = new TypeToken<ArrayList<Pool>>() {}.getType();
-    Type TypeListDisp = new TypeToken<ArrayList<Dispositivo>>() {}.getType();
+    ClienteMQTT clienteMQTT;
+    private HttpsServer httpServer;
+    Type TypeListPool = new TypeToken<ArrayList<Pool>>() {
+    }.getType();
+    Type TypeListDisp = new TypeToken<ArrayList<Dispositivo>>() {
+    }.getType();
+
     public static void main(String[] args) {
         if (args.length > 0) {
             if (args[0].equals("ver")) {
@@ -65,13 +70,13 @@ public class ServidorIOT implements HttpHandler {
             System.out.println("Carregando configuracao Gpio...");
             if (cfg.getTipoServidor().equals(1)) {
                 for (Parametro btnGpio : listaBtnGpio) {
-                    InterfGpioRaspPI iGpioRaspPI = new InterfGpioRaspPI(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
+                    InterfGpioRaspPI iGpioRaspPI = new InterfGpioRaspPI(btnGpio.getC1(), btnGpio.getC2(),
+                            btnGpio.getC3(),
                             btnGpio.getC4(), btnGpio.getC8());
                     pool.getDispositivos().add(iGpioRaspPI);
                 }
-            }
-            else if (cfg.getTipoServidor().equals(2)) {
-                carregaGpioButtonsBanana();
+            } else if (cfg.getTipoServidor().equals(2)) {
+                carregaGpioButtonsBanana(pool.getId());
             }
             System.out.println("Carregando Servidor Rest...");
             httpServer = HttpsServer.create(new InetSocketAddress(27016), 0);
@@ -106,34 +111,57 @@ public class ServidorIOT implements HttpHandler {
             httpServer.createContext("/ServidorIOT", this);
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
             httpServer.setExecutor(threadPoolExecutor);
+            clienteMQTT = new ClienteMQTT("tcp://broker.mqttdashboard.com:1883", "neuverse", "M@r040370");
+            clienteMQTT.iniciar();
+            clienteMQTT.subscribe(0, this, "br/com/neuverse/servidores/" + pool.getId() + "/#");
+            clienteMQTT.subscribe(0, this, "br/com/neuverse/geral/#");
+
+            /*
+             * new Thread() {
+             * 
+             * @Override
+             * public void run() {
+             * try {
+             * while (true) {
+             * Gson gson = new
+             * GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+             * clienteMQTT.publicar("br/com/neuverse/servidores/lista",
+             * gson.toJson(conectores).getBytes(), 0);
+             * Thread.sleep(10000);
+             * }
+             * } catch (Exception e) {
+             * }
+             * }
+             * }.start();
+             */
+
             this.httpServer.start();
         } catch (Exception e) {
-            System.out.println("Erro ao instanciar ServidorIOT:"+e.getMessage());
+            System.out.println("Erro ao instanciar ServidorIOT:" + e.getMessage());
         }
     }
 
-    public void carregaGpioButtonsBanana() {
-		try {
-			Configuracao cfg = new Configuracao();
-			List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
-			for (Parametro btnGpio : listaBtnGpio) {
-				try {
-					InterGpioBananaPi bgrpi = new InterGpioBananaPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
-							btnGpio.getC4(), btnGpio.getC9(), btnGpio.getC10(), btnGpio.getC8());
-					if (btnGpio.getC1() > -1) {
-						 pool.getDispositivos().add(bgrpi);
-						
-					}
-				} catch (Exception e) {
-					Log.log(this, "Inicializa carregaGpioButtonsBanana :" + e.getMessage(), "DEBUG");
-				}
-			}
-			
+    public void carregaGpioButtonsBanana(String idPool) {
+        try {
+            Configuracao cfg = new Configuracao();
+            List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
+            for (Parametro btnGpio : listaBtnGpio) {
+                try {
+                    InterGpioBananaPi bgrpi = new InterGpioBananaPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
+                            btnGpio.getC4(), btnGpio.getC9(), btnGpio.getC10(), btnGpio.getC8(),idPool);
+                    if (btnGpio.getC1() > -1) {
+                        pool.getDispositivos().add(bgrpi);
 
-		} catch (Exception e) {
-			Log.log(this, "carregaGpioButtons() :" + e.getMessage(), "DEBUG");
-		}
-	}
+                    }
+                } catch (Exception e) {
+                    Log.log(this, "Inicializa carregaGpioButtonsBanana :" + e.getMessage(), "DEBUG");
+                }
+            }
+
+        } catch (Exception e) {
+            Log.log(this, "carregaGpioButtons() :" + e.getMessage(), "DEBUG");
+        }
+    }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -152,19 +180,18 @@ public class ServidorIOT implements HttpHandler {
             URI uri = exchange.getRequestURI();
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
             try {
-                if (uri.getPath().equals("/ServidorIOT/listar")){
+                if (uri.getPath().equals("/ServidorIOT/listar")) {
                     Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
                     send(200, gson.toJson(conectores), exchange);
-                }
-                else if (uri.getPath().equals("/ServidorIOT/atualizar")) {
+                } else if (uri.getPath().equals("/ServidorIOT/atualizar")) {
                     Gson gson = new GsonBuilder().create();
                     List<Pool> poolsAtualizar = gson.fromJson(requestContent.toString(), TypeListPool);
-                     for(Pool poolAtualizar : poolsAtualizar){
-                        for(Pool pool : conectores){
-                            if(pool.getId().equals(poolAtualizar.getId())){
-                                for(Dispositivo dispositivoAtualizar : poolAtualizar.getDispositivos()){
+                    for (Pool poolAtualizar : poolsAtualizar) {
+                        for (Pool pool : conectores) {
+                            if (pool.getId().equals(poolAtualizar.getId())) {
+                                for (Dispositivo dispositivoAtualizar : poolAtualizar.getDispositivos()) {
                                     Dispositivo dispositivo = pool.buscar(dispositivoAtualizar.getId());
-                                    if(dispositivo!=null)
+                                    if (dispositivo != null)
                                         dispositivo.updateStatus(dispositivoAtualizar.getStatus());
                                 }
                                 break;
@@ -172,12 +199,10 @@ public class ServidorIOT implements HttpHandler {
                         }
                     }
                     send(200, "", exchange);
-                   
-                } 
-                else if(uri.getPath().equals("/ServidorIOT/info")){
+
+                } else if (uri.getPath().equals("/ServidorIOT/info")) {
                     send(200, "{\"Servico\":\"ServidorIOT\"}", exchange);
-                }
-                else {
+                } else {
                     send(404, "", exchange);
                 }
             } catch (Exception e) {
@@ -193,5 +218,40 @@ public class ServidorIOT implements HttpHandler {
         os.write(bs);
         os.flush();
         os.close();
+    }
+
+    @Override
+    public void messageArrived(String topic, MqttMessage message) throws Exception {
+
+        System.out.println("Mensagem recebida:");
+        System.out.println("\tTópico: " + topic);
+        System.out.println("\tMensagem: " + new String(message.getPayload()));
+
+        if (topic.equals("br/com/neuverse/servidores/" + pool.getId() + "/listar")) {
+
+        } else if (topic.equals("br/com/neuverse/servidores/" + pool.getId() + "/atualizar")) {
+            Gson gson = new GsonBuilder().create();
+            List<Pool> poolsAtualizar = gson.fromJson(new String(message.getPayload()), TypeListPool);
+            for (Pool poolAtualizar : poolsAtualizar) {
+                for (Pool pool : conectores) {
+                    if (pool.getId().equals(poolAtualizar.getId())) {
+                        for (Dispositivo dispositivoAtualizar : poolAtualizar.getDispositivos()) {
+                            Dispositivo dispositivo = pool.buscar(dispositivoAtualizar.getId());
+                            if (dispositivo != null)
+                                dispositivo.updateStatus(dispositivoAtualizar.getStatus());
+                        }
+                        break;
+                    }
+                }
+            }
+        } else if (topic.equals("br/com/neuverse/geral/info")) {
+            Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+            ClienteMQTT clienteMQTTSend = new ClienteMQTT("tcp://broker.mqttdashboard.com:1883", "neuverse",
+                    "M@r040370");
+            clienteMQTTSend.iniciar();
+            clienteMQTTSend.publicar("br/com/neuverse/servidores/lista", gson.toJson(conectores).getBytes(), 0);
+            clienteMQTTSend.finalizar();
+        }
+
     }
 }

@@ -23,13 +23,15 @@ public class ButtonGpioBananaPi extends Device {
     public ButtonGpioBananaPi(Integer gpioInterruptor, Integer gpioComando, Integer p, Integer idVariavel,
             String btnsCtrl, Integer tipoControle) throws IOException {
 
-        Log.log(this,"Placa BananaPi ID:"+idVariavel+" I:"+gpioInterruptor+" O:"+gpioComando+" btns:"+btnsCtrl
-            +" tipo:"+tipoControle,"INFO");
-        
+        Log.log(this,
+                "Placa BananaPi ID:" + idVariavel + " I:" + gpioInterruptor + " O:" + gpioComando + " btns:" + btnsCtrl
+                        + " tipo:" + tipoControle,
+                "INFO");
+
         gpioNameOut = "gpio" + gpioInterruptor;
         gpioNameIn = "gpio" + gpioComando;
         btnsCtrlControlar = btnsCtrl;
-        tpControle =  tipoControle;       
+        tpControle = tipoControle;
         out = gpioInterruptor;
         in = gpioComando;
         BufferedWriter gpio;
@@ -38,7 +40,7 @@ public class ButtonGpioBananaPi extends Device {
                 gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/export", false));
                 if (out > -1)
                     gpio.write(String.valueOf(gpioInterruptor));
-                if (in > -1)    
+                if (in > -1)
                     gpio.write(String.valueOf(gpioComando));
                 gpio.close();
                 if (out > -1)
@@ -66,13 +68,13 @@ public class ButtonGpioBananaPi extends Device {
                                     if (st.equals(Status.ON))
                                         bAtualizar = true;
                                     st = Status.OFF;
-                                    if(bIot!=null)
+                                    if (bIot != null)
                                         bIot.setStatus(Status.OFF);
                                 } else if (valor.trim().equals("1")) {
                                     if (st.equals(Status.OFF))
                                         bAtualizar = true;
                                     st = Status.ON;
-                                    if(bIot!=null)
+                                    if (bIot != null)
                                         bIot.setStatus(Status.ON);
                                 }
                                 if (bAtualizar) {
@@ -104,38 +106,39 @@ public class ButtonGpioBananaPi extends Device {
                 gpio.write("in");
                 gpio.close();
                 new Thread() {
+
+                    
                     @Override
                     public void run() {
                         String vlrAtual = "-1";
-                        while (true) {
-                            try {  
-                                BufferedReader le = new BufferedReader(
-                                    new FileReader("/sys/class/gpio/" + gpioNameIn + "/value"));                              
+                        try {
+                            BufferedReader le = new BufferedReader(
+                                    new FileReader("/sys/class/gpio/" + gpioNameIn + "/value"));
+                            while (this.isAlive()) {
                                 char b[] = new char[10];
-                                le.read(b);                                
+                                le.read(b);
                                 String valor = String.valueOf(b);
-                                if(!valor.equals(vlrAtual)){
+                                if (!valor.equals(vlrAtual)) {
                                     vlrAtual = valor;
-                                    Log.log(this,"Evento recebido...","DEBUG");
+                                    Log.log(this, "Evento recebido...", "DEBUG");
                                     if (valor.trim().equals("0")) {
-                                        if(tpControle.equals(1))
+                                        if (tpControle.equals(1))
                                             off();
-                                        else if(tpControle.equals(2))
+                                        else if (tpControle.equals(2))
                                             ControlarBtns("off");
                                     } else if (valor.trim().equals("1")) {
-                                        if(tpControle.equals(1))
+                                        if (tpControle.equals(1))
                                             on();
-                                        else if(tpControle.equals(2))
+                                        else if (tpControle.equals(2))
                                             ControlarBtns("on");
                                     }
                                 }
-                                le.close();
-                                Thread.sleep(500);
-                            } catch (Exception e) {
-                                Log.log(this, "Erro ao ler in arquivo" + e.getMessage(), "DEBUG");
+                                Thread.sleep(100);
                             }
+                            le.close();
+                        } catch (Exception e) {
+                            Log.log(this, "Erro ao ler in arquivo" + e.getMessage(), "DEBUG");
                         }
-                        
                     }
                 }.start();
             }
@@ -144,13 +147,13 @@ public class ButtonGpioBananaPi extends Device {
         setId(idVariavel);
     }
 
-    public void ControlarBtns(String onoff) throws IOException{
-        for(String b : btnsCtrlControlar.split(";")){
+    public void ControlarBtns(String onoff) throws IOException {
+        for (String b : btnsCtrlControlar.split(";")) {
             BufferedWriter gpio;
             gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/gpio" + b + "/value", false));
-            if(onoff.equals("on"))
+            if (onoff.equals("on"))
                 gpio.write("1");
-            if(onoff.equals("off"))
+            if (onoff.equals("off"))
                 gpio.write("0");
             gpio.close();
         }
