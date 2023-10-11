@@ -13,6 +13,7 @@ import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
 import br.com.neuverse.enumerador.Status;
+import br.com.neuverse.enumerador.TipoIOT;
 
 public class InterfGpioRaspPI extends Dispositivo {
 
@@ -20,12 +21,13 @@ public class InterfGpioRaspPI extends Dispositivo {
     private Integer tipo;
     private GpioPinDigitalInput entrada;
     private GpioPinDigitalOutput saida;
+    private Integer nivelAcionamento;
     
     public InterfGpioRaspPI(){
 
     }
     
-    public InterfGpioRaspPI(Integer gpioSaida, Integer gpioEntrada, Integer p, Integer id, String nickNameString) {
+    public InterfGpioRaspPI(Integer gpioSaida, Integer gpioEntrada, Integer p, Integer id, String nickNameString,Integer genero) {
 
         System.out.println("Iniciando "+gpioSaida+" "+gpioEntrada+" "+p+" "+id+" "+nickNameString);
         setId(id);
@@ -34,6 +36,21 @@ public class InterfGpioRaspPI extends Dispositivo {
         Pin pinIN = null;
         Pin pinOUT = null;
         tipo = p;
+        System.out.println(genero);
+          try{
+            setGenero(TipoIOT.getEnum(genero));
+        }
+        catch(Exception e){
+        }
+         
+        nivelAcionamento = p;
+
+        if(nivelAcionamento == 0){
+            setNivelAcionamento(Status.LOW);
+        }
+        else{
+            setNivelAcionamento(Status.HIGH);
+        }
         if(gpioSaida>-1){
             pinOUT = RaspiPin.getPinByAddress(gpioSaida);
             saida = gpio.provisionDigitalOutputPin(pinOUT);
@@ -73,6 +90,7 @@ public class InterfGpioRaspPI extends Dispositivo {
                         setStatus(Status.ON);
                     else
                     setStatus(Status.OFF);
+                    sendEvents();
                 }
             });
             setStatus(getStatus());

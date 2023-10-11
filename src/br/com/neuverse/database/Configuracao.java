@@ -46,7 +46,7 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 	}
 
 	public Boolean getControlePiscina(){
-		Log.log(this,"Lendo configuraÃ§Ã£o controle piscina.","DEBUG");
+		Log.log(this,"Lendo configuração controle piscina.","DEBUG");
 		try{
 			Statement statement = connection.createStatement();
 			ResultSet rs = statement.executeQuery("SELECT C1 FROM CONFIGURACAO where parametro = 'controlePiscina'");
@@ -85,7 +85,7 @@ public class Configuracao extends Conexao implements Dao<Configuracao>{
 		}
 		catch(Exception e){
 		}
-		return "";
+		return "Sem Nome";
 	}
 
 	public List<Parametro> retornaBtnGpio() {

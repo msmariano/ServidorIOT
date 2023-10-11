@@ -8,6 +8,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 
 import br.com.neuverse.enumerador.Status;
+import br.com.neuverse.enumerador.TipoIOT;
 import br.com.neuverse.principal.ClienteMQTT;
 
 public class Dispositivo {
@@ -21,7 +22,21 @@ public class Dispositivo {
     @Expose(serialize = true)
     private String nick;
 
+    @Expose(serialize = true)
+    private Status nivelAcionamento;   
+
     private String idPool;
+
+    @Expose(serialize = true)
+    private TipoIOT genero;
+
+    public TipoIOT getGenero() {
+        return genero;
+    }
+
+    public void setGenero(TipoIOT genero) {
+        this.genero = genero;
+    }
 
     public String getIdPool() {
         return idPool;
@@ -65,6 +80,14 @@ public class Dispositivo {
 
     public void setNick(String nick) {
         this.nick = nick;
+    }
+
+    public Status getNivelAcionamento() {
+        return nivelAcionamento;
+    }
+
+    public void setNivelAcionamento(Status nivelAcionamento) {
+        this.nivelAcionamento = nivelAcionamento;
     }
 
     public void sendEvents() {

@@ -4,30 +4,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
-
 import br.com.neuverse.entity.Comando;
-import br.com.neuverse.enumerador.ComEnum;
 import br.com.neuverse.enumerador.Status;
 
 public class ControlePiscina {
@@ -43,19 +23,17 @@ public class ControlePiscina {
     final static private String on = "1";
     final static private String off = "0";
     static private boolean onByKey = false;
-    private SSLSocket socket;
     private boolean desligarTimer = false;
-    private boolean conectado = false;
-
-    private Main main;
-
-    public Main getMain() {
-        return main;
+    private String linhasDisplay [];
+   
+    public String[] getLinhasDisplay() {
+        return linhasDisplay;
     }
 
-    public void setMain(Main main) {
-        this.main = main;
+    public void setLinhasDisplay(String linhasDisplayArg []){
+        linhasDisplay = linhasDisplayArg;
     }
+  
 
     private Comando comando = new Comando();
 
@@ -123,21 +101,21 @@ public class ControlePiscina {
                     Log.log(this, "Timer iniciado as " + sdf.format(new Date()), "DEBUG");
                     comando.setTimer(Status.OFF);
                     escreverPin(indTimer, on);
-                     main.getLinhasDisplay()[2] = "Timer UP!";
+                    getLinhasDisplay()[2] = "Timer UP!";
                     while (true) {
                         String t = sdf.format(new Date());
                         Thread.sleep(1000);
                         if (!desligarTimer) {
                             if (horarios.contains(t)) {
                                 Log.log(this, "Ativando Filtro Bomba pelo timer.", "DEBUG");
-                                main.getLinhasDisplay()[0] = "Filtro Timer ON!";
+                                getLinhasDisplay()[0] = "Filtro Timer ON!";
                                 comando.setTimer(Status.ON);
                                 ligarBombaFiltro(1);
                                 Thread.sleep(1000 * 60 * minutos);
                                 comando.setTimer(Status.OFF);
                                 if (!onByKey) {
                                     ligarBombaFiltro(0);
-                                    main.getLinhasDisplay()[0] = "Filtro Timer OFF!";
+                                    getLinhasDisplay()[0] = "Filtro Timer OFF!";
                                 }
                             }
                         }
@@ -187,10 +165,10 @@ public class ControlePiscina {
                                 desligarTimer = !desligarTimer;
                                 if (desligarTimer) {
                                     escreverPin(indTimer, off);
-                                    main.getLinhasDisplay()[2] = "Timer DOWN!";
+                                    getLinhasDisplay()[2] = "Timer DOWN!";
                                 } else{
                                     escreverPin(indTimer, on);
-                                    main.getLinhasDisplay()[2] = "Timer UP!";
+                                    getLinhasDisplay()[2] = "Timer UP!";
                                 }
 
                                  bEspera =  true;
@@ -210,12 +188,12 @@ public class ControlePiscina {
                             acionada = true;
                             if (!push) {
                                 ligarBombaFiltro(1);
-                                main.getLinhasDisplay()[0] = "Filtro Manual ON!";
+                                getLinhasDisplay()[0] = "Filtro Manual ON!";
                                 onByKey = true;
                                 push = true;
                             } else if (push) {
                                 ligarBombaFiltro(0);
-                                main.getLinhasDisplay()[0] = "Filtro Manual OFF!";
+                                getLinhasDisplay()[0] = "Filtro Manual OFF!";
                                 onByKey = false;
                                 push = false;
                             }
@@ -237,11 +215,11 @@ public class ControlePiscina {
         switch (acao) {
             case 0:
                 escreverPin(bomba, off);
-                main.getLinhasDisplay()[2] = "Dreno ligado";
+                getLinhasDisplay()[2] = "Dreno ligado";
                 break;
             case 1:
                 escreverPin(bomba, on);
-                 main.getLinhasDisplay()[2] = "";
+                getLinhasDisplay()[2] = "";
                 break;
         }
     }
@@ -258,13 +236,13 @@ public class ControlePiscina {
                     if (lerPin(nivelBaixo).equals("1")) {
 
                         if (!alerta) {
-                            main.getLinhasDisplay()[1] = "Presença de agua!";
+                            getLinhasDisplay()[1] = "Presença de agua!";
                             comando.setNivel(Status.PRESENCA_AGUA);
                             alerta = true;
                         }
                     } else {
                         comando.setNivel(Status.NORMAL_AGUA);
-                        main.getLinhasDisplay()[1] = "Agua normal!";
+                        getLinhasDisplay()[1] = "Agua normal!";
                         if (alerta) {
                             ligarDreno(1);
                         }

@@ -11,6 +11,18 @@ public class Pool {
     private String id;
     @Expose(serialize = true)
    	private List<Dispositivo> dispositivos = new ArrayList<>();
+    @Expose(serialize = true)
+    private String nick;
+
+    public String getNick() {
+        return nick;
+    }
+
+
+    public void setNick(String nick) {
+        this.nick = nick;
+    }
+
 
     public Dispositivo buscar(Integer id){
         for (Dispositivo dispositivo : dispositivos){

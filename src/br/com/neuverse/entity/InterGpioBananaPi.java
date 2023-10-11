@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import br.com.neuverse.enumerador.Status;
+import br.com.neuverse.enumerador.TipoIOT;
 import br.com.neuverse.principal.Log;
 
 public class InterGpioBananaPi extends Dispositivo {
@@ -20,9 +21,10 @@ public class InterGpioBananaPi extends Dispositivo {
     private Status st = Status.OFF;
     private String btnsCtrlControlar;
     private Integer tpControle;
+    private Integer nivelAcionamento;
 
     public InterGpioBananaPi(Integer gpioInterruptor, Integer gpioComando, Integer p, Integer idVariavel,
-            String btnsCtrl, Integer tipoControle,String nickNameString,String idPool) throws IOException {
+            String btnsCtrl, Integer tipoControle,String nickNameString,String idPool,Integer genero) throws IOException {
 
         Log.log(this,"Placa BananaPi ID:"+idVariavel+" I:"+gpioInterruptor+" O:"+gpioComando+" btns:"+btnsCtrl
             +" tipo:"+tipoControle,"INFO");
@@ -30,6 +32,23 @@ public class InterGpioBananaPi extends Dispositivo {
         setId(idVariavel);
         setNick(nickNameString);
         setIdPool(idPool);
+        nivelAcionamento = p;
+        System.out.println(genero);
+
+        try{
+            setGenero(TipoIOT.getEnum(genero));
+        }
+        catch(Exception e){
+        }
+               
+
+
+        if(nivelAcionamento == 0){
+            setNivelAcionamento(Status.LOW);
+        }
+        else{
+            setNivelAcionamento(Status.HIGH);
+        }
         gpioNameOut = "gpio" + gpioInterruptor;
         gpioNameIn = "gpio" + gpioComando;
         btnsCtrlControlar = btnsCtrl;

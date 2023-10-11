@@ -14,6 +14,8 @@ package br.com.neuverse.principal;
 // scp .\ServidorIOT-1.jar pi@192.168.10.76:/home/pi
 //ssh -L 5901:127.0.0.1:5900 -C -N -l pi 192.168.0.125
 
+/*curl -k --location --request POST 'https://192.168.18.58:27016/ServidorIOT/listar' --data ''*/
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -590,7 +592,7 @@ public class Main {
 		if (cfg.getControlePiscina()) {
 			Log.log(this, "Iniciando Controle Piscina", "DEBUG");
 			controlePiscina = new ControlePiscina();
-			controlePiscina.setMain(this);
+			controlePiscina.setLinhasDisplay(linhasDisplay);
 			controlePiscina.inicializar();
 		}
 		portaSSLRest = cfg.retornaPortaSSLRest();

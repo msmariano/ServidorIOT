@@ -9,7 +9,9 @@ import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.KeyStore;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -38,6 +40,10 @@ import br.com.neuverse.entity.InterGpioBananaPi;
 import br.com.neuverse.entity.InterfGpioRaspPI;
 import br.com.neuverse.entity.Parametro;
 import br.com.neuverse.entity.Pool;
+import br.com.neuverse.entity.Versao;
+import de.pi3g.pi.oled.Font;
+import de.pi3g.pi.oled.OLEDDisplay;
+
 
 public class ServidorIOT implements HttpHandler, IMqttMessageListener {
 
@@ -49,11 +55,14 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
     }.getType();
     Type TypeListDisp = new TypeToken<ArrayList<Dispositivo>>() {
     }.getType();
+    private String linhasDisplay [] = new String[5];
+
+    
 
     public static void main(String[] args) {
         if (args.length > 0) {
             if (args[0].equals("ver")) {
-                System.out.print("ServidorIOT V00_00_11.");
+                System.out.print("ServidorIOT V00_00_50 10/10/2023.");
                 return;
             }
         }
@@ -66,17 +75,53 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
         conectores.add(pool);
         try {
             Configuracao cfg = new Configuracao();
+            String nomeServidor = cfg.getNomeServidor();
+            pool.setNick(nomeServidor);
             List<Parametro> listaBtnGpio = cfg.retornaBtnGpio();
             System.out.println("Carregando configuracao Gpio...");
             if (cfg.getTipoServidor().equals(1)) {
                 for (Parametro btnGpio : listaBtnGpio) {
                     InterfGpioRaspPI iGpioRaspPI = new InterfGpioRaspPI(btnGpio.getC1(), btnGpio.getC2(),
                             btnGpio.getC3(),
-                            btnGpio.getC4(), btnGpio.getC8());
+                            btnGpio.getC4(), btnGpio.getC8(),btnGpio.getC5());
                     pool.getDispositivos().add(iGpioRaspPI);
                 }
-            } else if (cfg.getTipoServidor().equals(2)) {
+            }
+            else if (cfg.getTipoServidor().equals(2)) {
                 carregaGpioButtonsBanana(pool.getId());
+            }
+            if (cfg.getControlePiscina()) {
+                Log.log(this, "Iniciando Controle Piscina", "DEBUG");                
+                ControlePiscina controlePiscina = new ControlePiscina();
+                controlePiscina.setLinhasDisplay(linhasDisplay);
+                controlePiscina.inicializar();
+                new Thread() {
+                    @Override
+                    public void run() {
+                        OLEDDisplay display;                       
+                        try {
+                            for (int i = 0; i < linhasDisplay.length; i++) {
+                                linhasDisplay[i] = "";
+                            }
+                            Versao v = new Versao();
+                            display = new OLEDDisplay(0, 60);
+                            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                            while (true) {
+                                Thread.sleep(1000);
+                                display.clear();
+                                display.drawString("Neuverse Tecnologia. " + v.getVersao(), Font.FONT_5X8, 0, 0, true);
+                                display.drawString("ServidorIOT " + v.getVersao(), Font.FONT_5X8, 0, 10, true);
+                                display.drawString(sdf.format(new Date()), Font.FONT_5X8, 0, 20, true);
+                                display.drawString(linhasDisplay[0], Font.FONT_5X8, 0, 30, true);
+                                display.drawString(linhasDisplay[1], Font.FONT_5X8, 0, 40, true);
+                                display.drawString(linhasDisplay[2], Font.FONT_5X8, 0, 50, true);
+                                display.update();
+                            }
+                        } catch (Exception e) {
+                            System.out.println(e.getMessage());
+                        }
+                    }
+                }.start();
             }
             System.out.println("Carregando Servidor Rest...");
             httpServer = HttpsServer.create(new InetSocketAddress(27016), 0);
@@ -115,26 +160,6 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
             clienteMQTT.iniciar();
             clienteMQTT.subscribe(0, this, "br/com/neuverse/servidores/" + pool.getId() + "/#");
             clienteMQTT.subscribe(0, this, "br/com/neuverse/geral/#");
-
-            /*
-             * new Thread() {
-             * 
-             * @Override
-             * public void run() {
-             * try {
-             * while (true) {
-             * Gson gson = new
-             * GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-             * clienteMQTT.publicar("br/com/neuverse/servidores/lista",
-             * gson.toJson(conectores).getBytes(), 0);
-             * Thread.sleep(10000);
-             * }
-             * } catch (Exception e) {
-             * }
-             * }
-             * }.start();
-             */
-
             this.httpServer.start();
         } catch (Exception e) {
             System.out.println("Erro ao instanciar ServidorIOT:" + e.getMessage());
@@ -148,7 +173,7 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
             for (Parametro btnGpio : listaBtnGpio) {
                 try {
                     InterGpioBananaPi bgrpi = new InterGpioBananaPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
-                            btnGpio.getC4(), btnGpio.getC9(), btnGpio.getC10(), btnGpio.getC8(),idPool);
+                            btnGpio.getC4(), btnGpio.getC9(), btnGpio.getC10(), btnGpio.getC8(), idPool,btnGpio.getC5());
                     if (btnGpio.getC1() > -1) {
                         pool.getDispositivos().add(bgrpi);
 
@@ -218,6 +243,14 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
         os.write(bs);
         os.flush();
         os.close();
+    }
+
+    public String[] getLinhasDisplay() {
+        return linhasDisplay;
+    }
+
+    public void setLinhasDisplay(String[] linhasDisplay) {
+        this.linhasDisplay = linhasDisplay;
     }
 
     @Override
