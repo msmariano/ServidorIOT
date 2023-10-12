@@ -11,6 +11,7 @@ import java.net.URI;
 import java.security.KeyStore;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -22,8 +23,15 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -44,36 +52,55 @@ import br.com.neuverse.entity.Versao;
 import de.pi3g.pi.oled.Font;
 import de.pi3g.pi.oled.OLEDDisplay;
 
+////openssl s_client -connect 73cd8514e7c447ff91d697b4b02f88c5.s1.eu.hivemq.cloud:8883 -showcerts < /dev/null 2> /dev/null | sed -n '/BEGIN/,/END/p' > server.pem
+//openssl x509 -outform der -in server.pem -out ca.crt
+//sudo keytool -import -noprompt -trustcacerts -alias ca -file ca.crt -keystore /usr/lib/jvm/jdk-8-oracle-arm32-vfp-hflt/jre/lib/security/cacerts -storepass changeit
 
-public class ServidorIOT implements HttpHandler, IMqttMessageListener {
+public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMessageListener {
 
     Pool pool = new Pool();
     List<Pool> conectores = new ArrayList<>();
-    ClienteMQTT clienteMQTT;
     private HttpsServer httpServer;
-    Type TypeListPool = new TypeToken<ArrayList<Pool>>() {
-    }.getType();
-    Type TypeListDisp = new TypeToken<ArrayList<Dispositivo>>() {
-    }.getType();
+    Type TypeListPool = new TypeToken<ArrayList<Pool>>() {}.getType();
+    Type TypeListDisp = new TypeToken<ArrayList<Dispositivo>>() {}.getType();
     private String linhasDisplay [] = new String[5];
-
+    private MqttClient mqttClient;
+    private MqttConnectOptions mqttOptions;
     
 
     public static void main(String[] args) {
         if (args.length > 0) {
             if (args[0].equals("ver")) {
-                System.out.print("ServidorIOT V00_00_50 10/10/2023.");
+                System.out.print("ServidorIOT V00_00_51 11/10/2023.");
                 return;
             }
         }
         new ServidorIOT();
-
     }
 
     public ServidorIOT() {
+        //System.setProperty("javax.net.ssl.trustStore", "/usr/lib/jvm/jdk-8-oracle-arm32-vfp-hflt/jre/lib/security/cacerts");
+        //System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
         // Inicio controle deste Servidor
         conectores.add(pool);
         try {
+
+            mqttOptions = new MqttConnectOptions();
+            mqttOptions.setMaxInflight(200);
+            mqttOptions.setKeepAliveInterval(10);
+            mqttOptions.setAutomaticReconnect(true);
+            mqttOptions.setCleanSession(false);
+            mqttOptions.setSSLHostnameVerifier(null);
+            mqttOptions.setUserName("neuverse");
+            mqttOptions.setPassword("M@r040370".toCharArray());
+            try {
+                mqttClient = new MqttClient("ssl://73cd8514e7c447ff91d697b4b02f88c5.s1.eu.hivemq.cloud:8883", pool.getId(), new MqttDefaultFilePersistence(System.getProperty("java.io.tmpdir")));
+                mqttClient.setCallback(this);
+                mqttClient.connect(mqttOptions);
+            } catch (MqttException ex) {
+                Log.log(this,"Erro ao se conectar ao broker mqtt "+ " - " + ex,"ERROR");
+            }
+
             Configuracao cfg = new Configuracao();
             String nomeServidor = cfg.getNomeServidor();
             pool.setNick(nomeServidor);
@@ -85,6 +112,7 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
                             btnGpio.getC3(),
                             btnGpio.getC4(), btnGpio.getC8(),btnGpio.getC5());
                     pool.getDispositivos().add(iGpioRaspPI);
+                    iGpioRaspPI.setMqttClient(mqttClient);
                 }
             }
             else if (cfg.getTipoServidor().equals(2)) {
@@ -156,11 +184,10 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
             httpServer.createContext("/ServidorIOT", this);
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
             httpServer.setExecutor(threadPoolExecutor);
-            clienteMQTT = new ClienteMQTT("tcp://broker.mqttdashboard.com:1883", "neuverse", "M@r040370");
-            clienteMQTT.iniciar();
-            clienteMQTT.subscribe(0, this, "br/com/neuverse/servidores/" + pool.getId() + "/#");
-            clienteMQTT.subscribe(0, this, "br/com/neuverse/geral/#");
             this.httpServer.start();
+
+            
+           
         } catch (Exception e) {
             System.out.println("Erro ao instanciar ServidorIOT:" + e.getMessage());
         }
@@ -174,6 +201,7 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
                 try {
                     InterGpioBananaPi bgrpi = new InterGpioBananaPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
                             btnGpio.getC4(), btnGpio.getC9(), btnGpio.getC10(), btnGpio.getC8(), idPool,btnGpio.getC5());
+                    bgrpi.setMqttClient(mqttClient);
                     if (btnGpio.getC1() > -1) {
                         pool.getDispositivos().add(bgrpi);
 
@@ -254,37 +282,82 @@ public class ServidorIOT implements HttpHandler, IMqttMessageListener {
     }
 
     @Override
+    public void connectionLost(Throwable cause) {
+    }
+
+    @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-
-        System.out.println("Mensagem recebida:");
-        System.out.println("\tTópico: " + topic);
-        System.out.println("\tMensagem: " + new String(message.getPayload()));
-
-        if (topic.equals("br/com/neuverse/servidores/" + pool.getId() + "/listar")) {
-
-        } else if (topic.equals("br/com/neuverse/servidores/" + pool.getId() + "/atualizar")) {
-            Gson gson = new GsonBuilder().create();
-            List<Pool> poolsAtualizar = gson.fromJson(new String(message.getPayload()), TypeListPool);
-            for (Pool poolAtualizar : poolsAtualizar) {
-                for (Pool pool : conectores) {
-                    if (pool.getId().equals(poolAtualizar.getId())) {
-                        for (Dispositivo dispositivoAtualizar : poolAtualizar.getDispositivos()) {
-                            Dispositivo dispositivo = pool.buscar(dispositivoAtualizar.getId());
-                            if (dispositivo != null)
-                                dispositivo.updateStatus(dispositivoAtualizar.getStatus());
-                        }
-                        break;
+        Log.log(this, "messageArrivedMQTT["+topic+"]:"+new String(message.getPayload()), "DEBUG");
+        if (topic.equals("br/com/neuverse/geral/info")) {
+            Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+            new Thread() {
+                @Override
+			    public void run() {
+                    try {
+                        mqttClient.publish("br/com/neuverse/geral/lista", gson.toJson(conectores).getBytes(), 0, false);
+                    } catch (MqttException e) {
                     }
                 }
-            }
-        } else if (topic.equals("br/com/neuverse/geral/info")) {
-            Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-            ClienteMQTT clienteMQTTSend = new ClienteMQTT("tcp://broker.mqttdashboard.com:1883", "neuverse",
-                    "M@r040370");
-            clienteMQTTSend.iniciar();
-            clienteMQTTSend.publicar("br/com/neuverse/servidores/lista", gson.toJson(conectores).getBytes(), 0);
-            clienteMQTTSend.finalizar();
+            }.start();
+        }
+        if (topic.equals("br/com/neuverse/servidores/" + pool.getId() + "/atualizar")) {
+            new Thread() {
+                @Override
+			    public void run() {
+                    try {
+                        Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+                        List<Pool> poolsAtualizar = gson.fromJson(new String(message.getPayload()), TypeListPool);
+                        for (Pool poolAtualizar : poolsAtualizar) {
+                            for (Pool pool : conectores) {
+                                if (pool.getId().equals(poolAtualizar.getId())) {
+                                    for (Dispositivo dispositivoAtualizar : poolAtualizar.getDispositivos()) {
+                                        Dispositivo dispositivo = pool.buscar(dispositivoAtualizar.getId());
+                                        if (dispositivo != null)
+                                            dispositivo.updateStatus(dispositivoAtualizar.getStatus());
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                }
+            }.start();            
         }
 
     }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken token) {
+    }
+
+    @Override
+    public void connectComplete(boolean reconnect, String serverURI) {
+        subscribe(0, this,"br/com/neuverse/servidores/" +pool.getId()+ "/#","br/com/neuverse/geral/info");
+    }
+
+    public IMqttToken subscribe(int qos, IMqttMessageListener gestorMensagemMQTT, String... topicos) {
+        if (mqttClient == null || topicos.length == 0) {
+            return null;
+        }
+        for(String s : topicos){
+             Log.log(this,"Subscribe:"+s,"DEBUG");
+        }       
+
+        int tamanho = topicos.length;
+        int[] qoss = new int[tamanho];
+        IMqttMessageListener[] listners = new IMqttMessageListener[tamanho];
+
+        for (int i = 0; i < tamanho; i++) {
+            qoss[i] = qos;
+            listners[i] = gestorMensagemMQTT;
+        }
+        try {
+            return mqttClient.subscribeWithResponse(topicos, qoss, listners);
+        } catch (MqttException ex) {
+            return null;
+        }
+    }
+
 }
