@@ -1,6 +1,7 @@
 package br.com.neuverse.principal;
 
 import java.text.SimpleDateFormat;
+import java.util.UUID;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -24,6 +25,9 @@ public class TesteMqtt implements  MqttCallbackExtended ,IMqttMessageListener {
 
         public static void main(String[] args) throws InterruptedException {
 
+            UUID uniqueKey = UUID.randomUUID();
+            String idGerado = uniqueKey.toString();
+            System.out.println(idGerado);
             TesteMqtt t = new TesteMqtt();
             t.iniciar();
 
@@ -42,12 +46,12 @@ public class TesteMqtt implements  MqttCallbackExtended ,IMqttMessageListener {
             mqttOptions.setMaxInflight(200);
             mqttOptions.setKeepAliveInterval(10);
             mqttOptions.setAutomaticReconnect(true);
-            mqttOptions.setCleanSession(false);
+            mqttOptions.setCleanSession(true);
             mqttOptions.setSSLHostnameVerifier(null);
             mqttOptions.setUserName("neuverse");
             mqttOptions.setPassword("M@r040370".toCharArray());
             try {
-                mqttClient = new MqttClient("ssl://73cd8514e7c447ff91d697b4b02f88c5.s1.eu.hivemq.cloud:8883", "1234", new MqttDefaultFilePersistence(System.getProperty("java.io.tmpdir")));
+                mqttClient = new MqttClient("ssl://f897f821.ala.us-east-1.emqxsl.com:8883", "1234", new MqttDefaultFilePersistence(System.getProperty("java.io.tmpdir")));
                 mqttClient.setCallback(this);
                 mqttClient.connect(mqttOptions);
             } catch (MqttException ex) {

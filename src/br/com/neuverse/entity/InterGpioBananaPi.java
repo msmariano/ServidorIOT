@@ -16,6 +16,7 @@ public class InterGpioBananaPi extends Dispositivo {
     private Integer in;
     private String gpioNameOut;
     private String gpioNameIn;
+    private Integer  inOut;
     
     private Object toDoObject;
     private Status st = Status.OFF;
@@ -29,6 +30,7 @@ public class InterGpioBananaPi extends Dispositivo {
         Log.log(this,"Placa BananaPi ID:"+idVariavel+" I:"+gpioInterruptor+" O:"+gpioComando+" btns:"+btnsCtrl
             +" tipo:"+tipoControle,"INFO");
            
+        setStatus(Status.OFF);
         setId(idVariavel);
         setNick(nickNameString);
         setIdPool(idPool);
@@ -41,6 +43,10 @@ public class InterGpioBananaPi extends Dispositivo {
         catch(Exception e){
         }
                
+        if(gpioInterruptor!=-1)
+            inOut = 0;
+        else 
+            inOut = 1;
 
 
         if(nivelAcionamento == 0){
@@ -107,10 +113,21 @@ public class InterGpioBananaPi extends Dispositivo {
                 }.start();
             }
             if (in > -1) {
+                BufferedReader le = null;
                 Log.log(this, "/sys/class/gpio/" + gpioNameIn + "/direction", "INFO");
                 gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/" + gpioNameIn + "/direction", false));
                 gpio.write("in");
                 gpio.close();
+                le = new BufferedReader(
+                        new FileReader("/sys/class/gpio/" + gpioNameIn + "/value"));
+                char b[] = new char[10];
+                le.read(b);
+                String valor = String.valueOf(b);
+                if (valor.trim().equals("0"))
+                    setStatus(Status.OFF);
+                else
+                    setStatus(Status.ON);
+                le.close();                        
                 new Thread() {
                     @Override
                     public void run() {
@@ -130,11 +147,22 @@ public class InterGpioBananaPi extends Dispositivo {
                                             off();
                                         else if(tpControle.equals(2))
                                             ControlarBtns("off");
+                                        
+                                        //if(getGenero().equals(TipoIOT.NOTIFICACAO)){
+                                            setStatus(Status.OFF);
+                                            sendEvents();
+                                        //}
+
                                     } else if (valor.trim().equals("1")) {
                                         if(tpControle.equals(1))
                                             on();
                                         else if(tpControle.equals(2))
                                             ControlarBtns("on");
+                                        
+                                        //if(getGenero().equals(TipoIOT.NOTIFICACAO)){
+                                            setStatus(Status.ON);
+                                            sendEvents();
+                                        //}
                                     }
                                 }
                                 le.close();
@@ -168,12 +196,17 @@ public class InterGpioBananaPi extends Dispositivo {
     @Override
     public boolean on() {
         try {
-            BufferedWriter gpio;
-            setStatus(Status.ON);
-            System.out.println("/sys/class/gpio/" + gpioNameOut + "/value");
-            gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/" + gpioNameOut + "/value", false));
-            gpio.write("1");
-            gpio.close();
+            if(tpControle.equals(2))
+                ControlarBtns("on");
+            else{
+                BufferedWriter gpio;
+                setStatus(Status.ON);
+                System.out.println("/sys/class/gpio/" + gpioNameOut + "/value");
+                gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/" + gpioNameOut + "/value", false));
+                gpio.write("1");
+                gpio.close();               
+            }
+            sendEvents();
         } catch (Exception e) {
         }
         return false;
@@ -184,12 +217,17 @@ public class InterGpioBananaPi extends Dispositivo {
     @Override
     public boolean off() {
         try {
-            BufferedWriter gpio;
-            setStatus(Status.OFF);
-            System.out.println("/sys/class/gpio/" + gpioNameOut + "/value");
-            gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/" + gpioNameOut + "/value", false));
-            gpio.write("0");
-            gpio.close();
+             if(tpControle.equals(2))
+                ControlarBtns("off");
+            else{
+                BufferedWriter gpio;
+                setStatus(Status.OFF);
+                System.out.println("/sys/class/gpio/" + gpioNameOut + "/value");
+                gpio = new BufferedWriter(new FileWriter("/sys/class/gpio/" + gpioNameOut + "/value", false));
+                gpio.write("0");
+                gpio.close();                
+            }
+            sendEvents();
         } catch (Exception e) {
         }
         return false;
@@ -198,7 +236,14 @@ public class InterGpioBananaPi extends Dispositivo {
     @Override
     public Status getStatus() {
         try {
-            BufferedReader le = new BufferedReader(new FileReader("/sys/class/gpio/" + gpioNameOut + "/value"));
+            String gpio="";
+            if(inOut==0)
+                gpio = gpioNameOut;
+            else
+                gpio = gpioNameIn;
+            
+
+            BufferedReader le = new BufferedReader(new FileReader("/sys/class/gpio/" + gpio + "/value"));
             char b[] = new char[10];
             le.read(b);
             String valor = String.valueOf(b);
@@ -220,9 +265,9 @@ public class InterGpioBananaPi extends Dispositivo {
 
     @Override
     public void updateStatus(Status st) {
-        if (st == Status.ON) {
+        if (st == Status.ON&&!getGenero().equals(TipoIOT.NOTIFICACAO)) {
             on();
-        } else if (st == Status.OFF) {
+        } else if (st == Status.OFF&&!getGenero().equals(TipoIOT.NOTIFICACAO)) {
             off();
         }
 

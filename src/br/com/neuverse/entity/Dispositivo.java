@@ -12,6 +12,7 @@ import com.google.gson.annotations.Expose;
 import br.com.neuverse.enumerador.Status;
 import br.com.neuverse.enumerador.TipoIOT;
 import br.com.neuverse.principal.ClienteMQTT;
+import br.com.neuverse.principal.Log;
 
 public class Dispositivo {
 
@@ -123,6 +124,7 @@ public class Dispositivo {
             public void run() {
                 try {
                     mqttClient.publish("br/com/neuverse/servidores/events", msg.getBytes(),0, false);
+                    Log.log(this,"Evento:"+msg,"SALVARDIRETO");
                 }
                 catch(Exception e){
                     System.out.println(e.getMessage());

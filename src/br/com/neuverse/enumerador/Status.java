@@ -45,7 +45,9 @@ public enum Status {
 	NOTIFICACAO_NETWORK(38,""),
 	PRESENCA_AGUA(39,"presenca de agua"),
 	ALERTA_AGUA(40,"alerta de agua"),
-	NORMAL_AGUA(41,"agua normal");
+	NORMAL_AGUA(41,"agua normal"),
+	PUSHON(42, "PUSH"),
+	PUSHOFF(43, "PUSH");
 
 	private final int valor;
 	private final String descricao;

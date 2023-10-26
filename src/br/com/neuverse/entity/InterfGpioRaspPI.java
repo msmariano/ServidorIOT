@@ -27,10 +27,11 @@ public class InterfGpioRaspPI extends Dispositivo {
 
     }
     
-    public InterfGpioRaspPI(Integer gpioSaida, Integer gpioEntrada, Integer p, Integer id, String nickNameString,Integer genero) {
+    public InterfGpioRaspPI(Integer gpioSaida, Integer gpioEntrada, Integer p, Integer id, String nickNameString,Integer genero,String poolId) {
 
         System.out.println("Iniciando "+gpioSaida+" "+gpioEntrada+" "+p+" "+id+" "+nickNameString);
         setId(id);
+        setIdPool(poolId);
         setNick(nickNameString);
         gpio = GpioFactory.getInstance();
         Pin pinIN = null;
@@ -68,15 +69,23 @@ public class InterfGpioRaspPI extends Dispositivo {
                 @Override
                 public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
                     if (tipo.equals(1)) {
-                        if (saida.isHigh())
-                            saida.low();
-                        else
-                            saida.high();
+                        if(!getGenero().equals(TipoIOT.NOTIFICACAO)&&!getGenero().equals(TipoIOT.TELEMETRIA)){
+                            if (saida.isHigh())
+                                saida.low();
+                            else
+                                saida.high();
+                        }
+                        else if (getGenero().equals(TipoIOT.NOTIFICACAO))
+                            sendEvents();
                     } else {
-                        if (saida.isHigh())
-                            saida.high();
-                        else
-                            saida.low();
+                        if(!getGenero().equals(TipoIOT.NOTIFICACAO)&&!getGenero().equals(TipoIOT.TELEMETRIA)){
+                            if (saida.isHigh())
+                                saida.high();
+                            else
+                                saida.low();
+                         }
+                         else if (getGenero().equals(TipoIOT.NOTIFICACAO))
+                            sendEvents();
                     }
                 }
             });
@@ -135,11 +144,12 @@ public class InterfGpioRaspPI extends Dispositivo {
 
     @Override
     public void updateStatus(Status st) {
-        if (st == Status.ON) {
-            on();
-        } else if (st == Status.OFF) {
-            off();
+        if(!getGenero().equals(TipoIOT.NOTIFICACAO)&&!getGenero().equals(TipoIOT.TELEMETRIA)){
+            if (st == Status.ON) {
+                on();
+            } else if (st == Status.OFF) {
+                off();
+            }
         }
-
     }
 }

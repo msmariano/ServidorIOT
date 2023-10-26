@@ -11,9 +11,9 @@ import java.net.URI;
 import java.security.KeyStore;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -55,8 +55,9 @@ import de.pi3g.pi.oled.OLEDDisplay;
 ////openssl s_client -connect 73cd8514e7c447ff91d697b4b02f88c5.s1.eu.hivemq.cloud:8883 -showcerts < /dev/null 2> /dev/null | sed -n '/BEGIN/,/END/p' > server.pem
 //openssl x509 -outform der -in server.pem -out ca.crt
 //sudo keytool -import -noprompt -trustcacerts -alias ca -file ca.crt -keystore /usr/lib/jvm/jdk-8-oracle-arm32-vfp-hflt/jre/lib/security/cacerts -storepass changeit
+//sudo pppd updetach noauth silent nodeflate pty "/usr/bin/ssh msmariano@2001:1284:f509:b00a:8cb6:3e9a:1332:5e76 /usr/sbin/pppd nodetach notty noauth" ipparam vpn 192.168.0.250:192.168.18.250
 
-public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMessageListener {
+public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMessageListener/*,Runnable */{
 
     Pool pool = new Pool();
     List<Pool> conectores = new ArrayList<>();
@@ -66,7 +67,9 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
     private String linhasDisplay [] = new String[5];
     private MqttClient mqttClient;
     private MqttConnectOptions mqttOptions;
-    
+    boolean aliveOk = true;
+    Object obj = new Object();
+    private Boolean isMonitorando = false;
 
     public static void main(String[] args) {
         if (args.length > 0) {
@@ -74,8 +77,14 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
                 System.out.print("ServidorIOT V00_00_51 11/10/2023.");
                 return;
             }
+            if (args[0].equals("uuid")) {
+                UUID uniqueKey = UUID.randomUUID();
+		        String idGerado = uniqueKey.toString();
+                System.out.println(idGerado);
+                return;
+            }
         }
-        new ServidorIOT();
+        new ServidorIOT();//.run();
     }
 
     public ServidorIOT() {
@@ -89,12 +98,12 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
             mqttOptions.setMaxInflight(200);
             mqttOptions.setKeepAliveInterval(10);
             mqttOptions.setAutomaticReconnect(true);
-            mqttOptions.setCleanSession(false);
+            mqttOptions.setCleanSession(true);
             mqttOptions.setSSLHostnameVerifier(null);
             mqttOptions.setUserName("neuverse");
             mqttOptions.setPassword("M@r040370".toCharArray());
-            try {
-                mqttClient = new MqttClient("ssl://73cd8514e7c447ff91d697b4b02f88c5.s1.eu.hivemq.cloud:8883", pool.getId(), new MqttDefaultFilePersistence(System.getProperty("java.io.tmpdir")));
+           try {
+                mqttClient = new MqttClient("ssl://f897f821.ala.us-east-1.emqxsl.com:8883", pool.getId(), new MqttDefaultFilePersistence(System.getProperty("java.io.tmpdir")));
                 mqttClient.setCallback(this);
                 mqttClient.connect(mqttOptions);
             } catch (MqttException ex) {
@@ -110,7 +119,7 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
                 for (Parametro btnGpio : listaBtnGpio) {
                     InterfGpioRaspPI iGpioRaspPI = new InterfGpioRaspPI(btnGpio.getC1(), btnGpio.getC2(),
                             btnGpio.getC3(),
-                            btnGpio.getC4(), btnGpio.getC8(),btnGpio.getC5());
+                            btnGpio.getC4(), btnGpio.getC8(),btnGpio.getC5(),pool.getId());
                     pool.getDispositivos().add(iGpioRaspPI);
                     iGpioRaspPI.setMqttClient(mqttClient);
                 }
@@ -202,7 +211,7 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
                     InterGpioBananaPi bgrpi = new InterGpioBananaPi(btnGpio.getC1(), btnGpio.getC2(), btnGpio.getC3(),
                             btnGpio.getC4(), btnGpio.getC9(), btnGpio.getC10(), btnGpio.getC8(), idPool,btnGpio.getC5());
                     bgrpi.setMqttClient(mqttClient);
-                    if (btnGpio.getC1() > -1) {
+                    if (btnGpio.getC1() > -1 || btnGpio.getC2() > -1) {
                         pool.getDispositivos().add(bgrpi);
 
                     }
@@ -235,6 +244,11 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
             try {
                 if (uri.getPath().equals("/ServidorIOT/listar")) {
                     Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+                     for(Dispositivo dsp : pool.getDispositivos()){
+                        if(dsp.getId().equals(6)){
+                            System.out.println();
+                        }
+                    }
                     send(200, gson.toJson(conectores), exchange);
                 } else if (uri.getPath().equals("/ServidorIOT/atualizar")) {
                     Gson gson = new GsonBuilder().create();
@@ -283,11 +297,17 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
 
     @Override
     public void connectionLost(Throwable cause) {
+        Log.log(this, "mqttClient connectionLost", "SALVARDIRETO");
+        try {
+            //mqttClient.reconnect();
+        } catch (Exception e) {
+            Log.log(this, "mqttClient reconnect():" + e.getMessage(), "SALVARDIRETO");
+        }
     }
 
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-        Log.log(this, "messageArrivedMQTT["+topic+"]:"+new String(message.getPayload()), "DEBUG");
+        Log.log(this, "messageArrivedMQTT["+topic+"]:"+new String(message.getPayload()), "SALVARDIRETO");
         if (topic.equals("br/com/neuverse/geral/info")) {
             Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
             new Thread() {
@@ -300,7 +320,7 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
                 }
             }.start();
         }
-        if (topic.equals("br/com/neuverse/servidores/" + pool.getId() + "/atualizar")) {
+        else if (topic.equals("br/com/neuverse/servidores/" + pool.getId() + "/atualizar")) {
             new Thread() {
                 @Override
 			    public void run() {
@@ -325,6 +345,12 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
                 }
             }.start();            
         }
+        else if (topic.equals("br/com/neuverse/servidores/" + pool.getId() + "/alive")) {
+            
+                //aliveOk = true;
+                //obj.notifyAll();
+                
+        }
 
     }
 
@@ -335,6 +361,12 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
     @Override
     public void connectComplete(boolean reconnect, String serverURI) {
         subscribe(0, this,"br/com/neuverse/servidores/" +pool.getId()+ "/#","br/com/neuverse/geral/info");
+        if(!isMonitorando){
+            monitora();
+            isMonitorando = true;
+        }
+        Log.log(this,"mqttClient conectado","SALVARDIRETO");
+       
     }
 
     public IMqttToken subscribe(int qos, IMqttMessageListener gestorMensagemMQTT, String... topicos) {
@@ -360,4 +392,71 @@ public class ServidorIOT implements HttpHandler, MqttCallbackExtended ,IMqttMess
         }
     }
 
+    void mqttClientConectar() {
+        try {
+            if (mqttClient != null) {
+                try {
+                    mqttClient.disconnect();
+                    mqttClient.close();
+                    mqttClient = null;
+                } catch (Exception e) {
+                    Log.log(this, "mqttClientConectar()_1:" + e.getMessage(), "SALVARDIRETO");
+                }
+
+            }
+            mqttClient = new MqttClient("ssl://f897f821.ala.us-east-1.emqxsl.com:8883", pool.getId(),
+                    new MqttDefaultFilePersistence(System.getProperty("java.io.tmpdir")));
+            mqttClient.setCallback(this);
+            mqttClient.connect(mqttOptions);
+            for(Dispositivo dsp : pool.getDispositivos()){
+                dsp.setMqttClient(mqttClient);
+            }
+            Log.log(this, "Conectando mqttClient", "SALVARDIRETO");
+        } catch (Exception e) {
+            Log.log(this, "mqttClientConectar()_2:" + e.getMessage(), "SALVARDIRETO");
+        }
+
+    }
+
+    void monitora(){
+        new Thread() {
+            @Override
+            public void run() {
+                while(true){
+                    try {
+                        Thread.sleep(10000);
+                        if(mqttClient.isConnected())
+                            mqttClient.publish("br/com/neuverse/servidores/" + pool.getId() + "/alive","alive".getBytes(),
+                                0,false);
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }.start();
+    }
+
+   /* @Override
+    public void run() {
+        /*while(true){            
+            try{
+                if(mqttClient==null)
+                    mqttClientConectar();
+                Thread.sleep(1000*60);
+                aliveOk = false;
+                if(mqttClient.isConnected())
+                    mqttClient.publish("br/com/neuverse/servidores/" + pool.getId() + "/alive","alive".getBytes(),0,false);
+               
+
+                obj.wait(5000);
+
+
+                if(!aliveOk){
+                   mqttClientConectar();
+                }
+            }
+            catch(Exception e){
+                Log.log(this,"ServidorIOT.run():"+e.getMessage(),"SALVARDIRETO");
+            }
+        }
+    }*/
 }

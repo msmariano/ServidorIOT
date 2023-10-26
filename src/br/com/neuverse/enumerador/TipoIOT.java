@@ -11,7 +11,11 @@ public enum TipoIOT {
 	RASPBERRYGPIO(8,"Controle através da Gpio Raspberry"),
 	NETWORK(9,"rede"),
 	BANANAGPIO(10,"BananaPi"),
-	INTERRUPTOR(11,"Interruptor");
+	INTERRUPTOR(11,"Interruptor"),
+	SENSOR(12,"Sensor"),
+	NOTIFICACAO(13,"Notificacao"),
+	TELEMETRIA(14,"Telemetria"),
+	PUSHBUTTON(15,"PushButton");
 
 	private final int valor;
 	private final String descricao;

@@ -1,6 +1,7 @@
 package br.com.neuverse.principal;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -37,6 +38,29 @@ public class Log {
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy HH:mm:ss");
 		//if(tipo.equals("DEBUG"))
 			System.out.println("["+tipo+"] "+sdf.format(new Date())+"["+classe+"]:"+mensLog);
+
+
+		if(tipo.equals("SALVARDIRETO")){
+			BufferedWriter bw;
+			try {
+
+				File file = new File("/home/pi/Desktop/log.txt");
+  				if (file.exists()) {
+					double bytes = file.length();
+					if(bytes > 10*1024000){
+						file.delete();
+					}
+				}			
+
+				bw = new BufferedWriter(new FileWriter("/home/pi/Desktop/log.txt",true));
+				bw.write("["+tipo+"] "+sdf.format(new Date())+"["+classe+"]:"+mensLog+"\n");
+				bw.close();
+
+				
+				
+			} catch (Exception e) {
+			}
+		}
 
 		if(main!=null&&main.getTerminais()!=null){
 			for(Terminal ter :main.getTerminais()){
