@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "ClienteTCP",
+            "request": "launch",
+            "mainClass": "br.com.neuverse.principal.ClienteTCP",
+            "projectName": "ServidorIOT"
+        },
+        {
+            "type": "java",
             "name": "TesteMqtt",
             "request": "launch",
             "mainClass": "br.com.neuverse.principal.TesteMqtt",
